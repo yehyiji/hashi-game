@@ -1,0 +1,649 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta http-equiv="Content-Style-Type" content="text/css">
+  <title></title>
+  <meta name="Generator" content="Cocoa HTML Writer">
+  <meta name="CocoaVersion" content="2685.3">
+  <style type="text/css">
+    p.p1 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica}
+    p.p2 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica; min-height: 14.0px}
+  </style>
+</head>
+<body>
+<p class="p1">&lt;!DOCTYPE html&gt;</p>
+<p class="p1">&lt;html lang="zh-TW"&gt;</p>
+<p class="p1">&lt;head&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;meta charset="UTF-8"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;title&gt;數橋 (Hashi) 互動挑戰&lt;/title&gt;</p>
+<p class="p2"><span class="Apple-converted-space">  </span></p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;!-- 載入 React, ReactDOM 與 Babel --&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin&gt;&lt;/script&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin&gt;&lt;/script&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;script src="https://unpkg.com/@babel/standalone/babel.min.js"&gt;&lt;/script&gt;</p>
+<p class="p2"><span class="Apple-converted-space">  </span></p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;!-- 載入 Tailwind CSS --&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;script src="https://cdn.tailwindcss.com"&gt;&lt;/script&gt;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;style&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>/* 隱藏預設捲軸的簡易 CSS，讓介面更乾淨 */</p>
+<p class="p1"><span class="Apple-converted-space">    </span>.custom-scrollbar::-webkit-scrollbar { width: 8px; height: 8px; }</p>
+<p class="p1"><span class="Apple-converted-space">    </span>.custom-scrollbar::-webkit-scrollbar-track { background: rgba(0,0,0,0.05); border-radius: 4px; }</p>
+<p class="p1"><span class="Apple-converted-space">    </span>.custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.2); border-radius: 4px; }</p>
+<p class="p1"><span class="Apple-converted-space">    </span>.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.3); }</p>
+<p class="p1"><span class="Apple-converted-space">    </span>body { overscroll-behavior-y: none; } /* 防止手機下拉重新整理 */</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;/style&gt;</p>
+<p class="p1">&lt;/head&gt;</p>
+<p class="p1">&lt;body class="bg-slate-50"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;div id="root"&gt;&lt;/div&gt;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;script type="text/babel"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const { useState, useEffect, useMemo, useRef } = React;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>// === 關卡資料 ===</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const LEVELS = [</p>
+<p class="p1"><span class="Apple-converted-space">      </span>{</p>
+<p class="p1"><span class="Apple-converted-space">        </span>id: 1, name: "範例一", description: "這是講義上的第一個範例。試著找出不交叉的正確連法！",</p>
+<p class="p1"><span class="Apple-converted-space">        </span>islands: [</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ id: 1, x: 0, y: 0, req: 4 }, { id: 2, x: 2, y: 0, req: 5 }, { id: 3, x: 6, y: 0, req: 2 },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ id: 4, x: 3, y: 1, req: 2 }, { id: 5, x: 5, y: 1, req: 3 },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ id: 6, x: 0, y: 2, req: 4 },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ id: 7, x: 2, y: 3, req: 4 }, { id: 8, x: 4, y: 3, req: 2 },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ id: 9, x: 0, y: 4, req: 5 }, { id: 10, x: 5, y: 4, req: 2 },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ id: 11, x: 2, y: 5, req: 2 }, { id: 12, x: 6, y: 5, req: 3 },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ id: 13, x: 0, y: 6, req: 3 }, { id: 14, x: 4, y: 6, req: 1 }</p>
+<p class="p1"><span class="Apple-converted-space">        </span>]</p>
+<p class="p1"><span class="Apple-converted-space">      </span>},</p>
+<p class="p1"><span class="Apple-converted-space">      </span>{</p>
+<p class="p1"><span class="Apple-converted-space">        </span>id: 2, name: "範例二", description: "講義的第二個範例，所有的島嶼必須『全部連通』喔！",</p>
+<p class="p1"><span class="Apple-converted-space">        </span>islands: [</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ id: 1, x: 0, y: 0, req: 3 }, { id: 2, x: 4, y: 0, req: 4 }, { id: 3, x: 6, y: 0, req: 3 },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ id: 4, x: 2, y: 2, req: 1 }, { id: 5, x: 4, y: 2, req: 3 },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ id: 6, x: 0, y: 4, req: 4 }, { id: 7, x: 6, y: 4, req: 4 },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{ id: 8, x: 0, y: 6, req: 1 }, { id: 9, x: 3, y: 6, req: 1 }, { id: 10, x: 6, y: 6, req: 2 }</p>
+<p class="p1"><span class="Apple-converted-space">        </span>]</p>
+<p class="p1"><span class="Apple-converted-space">      </span>},</p>
+<p class="p1"><span class="Apple-converted-space">      </span>{</p>
+<p class="p1"><span class="Apple-converted-space">        </span>id: 3, name: "實戰一", description: "滿滿的島嶼！從角落或邊緣最大的數字開始挑戰吧。",</p>
+<p class="p1"><span class="Apple-converted-space">        </span>islands: [</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{id: 1, x: 1, y: 0, req: 1}, {id: 2, x: 3, y: 0, req: 3}, {id: 3, x: 6, y: 0, req: 3},</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{id: 4, x: 0, y: 1, req: 4}, {id: 5, x: 4, y: 1, req: 2},</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{id: 6, x: 6, y: 2, req: 2},</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{id: 7, x: 0, y: 3, req: 4}, {id: 8, x: 3, y: 3, req: 5}, {id: 9, x: 5, y: 3, req: 3},</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{id: 10, x: 1, y: 4, req: 2},</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{id: 11, x: 5, y: 5, req: 2},</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{id: 12, x: 1, y: 6, req: 4}, {id: 13, x: 3, y: 6, req: 6}, {id: 14, x: 6, y: 6, req: 3}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>]</p>
+<p class="p1"><span class="Apple-converted-space">      </span>},</p>
+<p class="p1"><span class="Apple-converted-space">      </span>{</p>
+<p class="p1"><span class="Apple-converted-space">        </span>id: 4, name: "實戰二", description: "注意中心的 6 和 5，它們需要連出很多座橋！",</p>
+<p class="p1"><span class="Apple-converted-space">        </span>islands: [</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{id: 1, x: 0, y: 0, req: 1}, {id: 2, x: 3, y: 0, req: 2}, {id: 3, x: 6, y: 0, req: 4},</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{id: 4, x: 0, y: 2, req: 3}, {id: 5, x: 2, y: 2, req: 5}, {id: 6, x: 4, y: 2, req: 2},</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{id: 7, x: 2, y: 4, req: 6}, {id: 8, x: 6, y: 4, req: 4},</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{id: 9, x: 0, y: 5, req: 1},</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{id: 10, x: 2, y: 6, req: 4}, {id: 11, x: 6, y: 6, req: 2}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>]</p>
+<p class="p1"><span class="Apple-converted-space">      </span>},</p>
+<p class="p1"><span class="Apple-converted-space">      </span>{</p>
+<p class="p1"><span class="Apple-converted-space">        </span>id: 5, name: "實戰三", description: "右上角有一個有趣的十字形狀，仔細推敲看看。",</p>
+<p class="p1"><span class="Apple-converted-space">        </span>islands: [</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{id: 1, x: 0, y: 0, req: 3}, {id: 2, x: 2, y: 0, req: 4}, {id: 3, x: 5, y: 0, req: 3},</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{id: 4, x: 4, y: 1, req: 1}, {id: 5, x: 6, y: 1, req: 2},</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{id: 6, x: 0, y: 2, req: 3}, {id: 7, x: 2, y: 2, req: 2}, {id: 8, x: 5, y: 2, req: 3},</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{id: 9, x: 2, y: 4, req: 4}, {id: 10, x: 4, y: 4, req: 2},</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{id: 11, x: 5, y: 5, req: 1},</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{id: 12, x: 0, y: 6, req: 2}, {id: 13, x: 2, y: 6, req: 4}, {id: 14, x: 6, y: 6, req: 4}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>]</p>
+<p class="p1"><span class="Apple-converted-space">      </span>},</p>
+<p class="p1"><span class="Apple-converted-space">      </span>{</p>
+<p class="p1"><span class="Apple-converted-space">        </span>id: 6, name: "實戰四", description: "看似分散，但其實只有唯一的連通方式喔！",</p>
+<p class="p1"><span class="Apple-converted-space">        </span>islands: [</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{id: 1, x: 0, y: 0, req: 3}, {id: 2, x: 3, y: 0, req: 3}, {id: 3, x: 6, y: 0, req: 3},</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{id: 4, x: 1, y: 1, req: 2},</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{id: 5, x: 4, y: 2, req: 3}, {id: 6, x: 6, y: 2, req: 4},</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{id: 7, x: 0, y: 5, req: 2}, {id: 8, x: 4, y: 5, req: 2},</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{id: 9, x: 1, y: 6, req: 3}, {id: 10, x: 3, y: 6, req: 4}, {id: 11, x: 6, y: 6, req: 3}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>]</p>
+<p class="p1"><span class="Apple-converted-space">      </span>},</p>
+<p class="p1"><span class="Apple-converted-space">      </span>{</p>
+<p class="p1"><span class="Apple-converted-space">        </span>id: 7, name: "實戰五", description: "完美對稱的謎題，保持冷靜一層層解開吧！",</p>
+<p class="p1"><span class="Apple-converted-space">        </span>islands: [</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{id: 1, x: 0, y: 0, req: 2}, {id: 2, x: 3, y: 0, req: 4}, {id: 3, x: 6, y: 0, req: 3},</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{id: 4, x: 1, y: 1, req: 2}, {id: 5, x: 5, y: 1, req: 2},</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{id: 6, x: 6, y: 2, req: 1},</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{id: 7, x: 1, y: 3, req: 5}, {id: 8, x: 3, y: 3, req: 4}, {id: 9, x: 5, y: 3, req: 3},</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{id: 10, x: 0, y: 4, req: 1},</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{id: 11, x: 3, y: 5, req: 1},</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{id: 12, x: 1, y: 6, req: 2}, {id: 13, x: 5, y: 6, req: 2}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>]</p>
+<p class="p1"><span class="Apple-converted-space">      </span>},</p>
+<p class="p1"><span class="Apple-converted-space">      </span>{</p>
+<p class="p1"><span class="Apple-converted-space">        </span>id: 8, name: "實戰六 (大魔王)", description: "15x15 大型迷宮！請善用「上一步」功能，步步為營。",</p>
+<p class="p1"><span class="Apple-converted-space">        </span>islands: [</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{id: 1, x: 2, y: 0, req: 3}, {id: 2, x: 9, y: 0, req: 3}, {id: 3, x: 14, y: 0, req: 3},</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{id: 4, x: 4, y: 1, req: 4}, {id: 5, x: 6, y: 1, req: 4}, {id: 6, x: 8, y: 1, req: 2}, {id: 7, x: 13, y: 1, req: 4},</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{id: 8, x: 1, y: 2, req: 1}, {id: 9, x: 5, y: 2, req: 3}, {id: 10, x: 7, y: 2, req: 4}, {id: 11, x: 10, y: 2, req: 2}, {id: 12, x: 12, y: 2, req: 4},</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{id: 13, x: 2, y: 3, req: 2},</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{id: 14, x: 1, y: 4, req: 4}, {id: 15, x: 4, y: 4, req: 5}, {id: 16, x: 6, y: 4, req: 5}, {id: 17, x: 8, y: 4, req: 4}, {id: 18, x: 10, y: 4, req: 4}, {id: 19, x: 13, y: 4, req: 4},</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{id: 20, x: 1, y: 6, req: 4}, {id: 21, x: 4, y: 6, req: 5}, {id: 22, x: 6, y: 6, req: 8}, {id: 23, x: 13, y: 6, req: 5},</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{id: 24, x: 0, y: 7, req: 2},</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{id: 25, x: 0, y: 9, req: 4}, {id: 26, x: 8, y: 9, req: 2}, {id: 27, x: 14, y: 9, req: 3},</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{id: 28, x: 4, y: 10, req: 2},</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{id: 29, x: 14, y: 11, req: 1},</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{id: 30, x: 1, y: 13, req: 1}, {id: 31, x: 4, y: 13, req: 2}, {id: 32, x: 6, y: 13, req: 4},</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{id: 33, x: 0, y: 14, req: 4}, {id: 34, x: 8, y: 14, req: 6}, {id: 35, x: 13, y: 14, req: 4}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>]</p>
+<p class="p1"><span class="Apple-converted-space">      </span>},</p>
+<p class="p1"><span class="Apple-converted-space">      </span>{</p>
+<p class="p1"><span class="Apple-converted-space">        </span>id: 9, name: "實戰七 (史詩級)", description: "終極挑戰！這是一張超大型地圖，考驗你的耐心與觀察力！",</p>
+<p class="p1"><span class="Apple-converted-space">        </span>islands: [</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{id: 1, x: 0, y: 0, req: 2}, {id: 2, x: 2, y: 0, req: 4}, {id: 3, x: 6, y: 0, req: 2}, {id: 4, x: 9, y: 0, req: 1}, {id: 5, x: 11, y: 0, req: 1}, {id: 6, x: 13, y: 0, req: 5}, {id: 7, x: 16, y: 0, req: 6}, {id: 8, x: 21, y: 0, req: 4}, {id: 9, x: 28, y: 0, req: 2}, {id: 10, x: 30, y: 0, req: 1},</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{id: 11, x: 1, y: 1, req: 1}, {id: 12, x: 4, y: 1, req: 2}, {id: 13, x: 10, y: 1, req: 2}, {id: 14, x: 12, y: 1, req: 2}, {id: 15, x: 14, y: 1, req: 1},</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{id: 16, x: 0, y: 2, req: 1}, {id: 17, x: 6, y: 2, req: 5}, {id: 18, x: 13, y: 2, req: 2}, {id: 19, x: 23, y: 2, req: 2}, {id: 20, x: 25, y: 2, req: 3},</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{id: 21, x: 2, y: 3, req: 4}, {id: 22, x: 8, y: 3, req: 4}, {id: 23, x: 11, y: 3, req: 2}, {id: 24, x: 15, y: 3, req: 7}, {id: 25, x: 21, y: 3, req: 4}, {id: 26, x: 30, y: 3, req: 2},</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{id: 27, x: 0, y: 4, req: 3}, {id: 28, x: 2, y: 4, req: 3}, {id: 29, x: 12, y: 4, req: 7}, {id: 30, x: 14, y: 4, req: 4}, {id: 31, x: 17, y: 4, req: 1}, {id: 32, x: 20, y: 4, req: 3}, {id: 33, x: 22, y: 4, req: 7}, {id: 34, x: 25, y: 4, req: 2},</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{id: 35, x: 16, y: 5, req: 2}, {id: 36, x: 18, y: 5, req: 1}, {id: 37, x: 21, y: 5, req: 3}, {id: 38, x: 24, y: 5, req: 2}, {id: 39, x: 27, y: 5, req: 4}, {id: 40, x: 30, y: 5, req: 2},</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{id: 41, x: 9, y: 6, req: 2}, {id: 42, x: 11, y: 6, req: 3}, {id: 43, x: 15, y: 6, req: 3}, {id: 44, x: 17, y: 6, req: 5}, {id: 45, x: 20, y: 6, req: 5}, {id: 46, x: 26, y: 6, req: 1},</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{id: 47, x: 11, y: 7, req: 2}, {id: 48, x: 15, y: 7, req: 2}, {id: 49, x: 16, y: 7, req: 2}, {id: 50, x: 19, y: 7, req: 3},</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{id: 51, x: 3, y: 8, req: 2}, {id: 52, x: 11, y: 8, req: 2}, {id: 53, x: 15, y: 8, req: 2}, {id: 54, x: 17, y: 8, req: 3}, {id: 55, x: 19, y: 8, req: 2}, {id: 56, x: 21, y: 8, req: 3}, {id: 57, x: 30, y: 8, req: 3},</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{id: 58, x: 2, y: 9, req: 3}, {id: 59, x: 23, y: 9, req: 2}, {id: 60, x: 26, y: 9, req: 4}, {id: 61, x: 29, y: 9, req: 3},</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{id: 62, x: 12, y: 10, req: 6}, {id: 63, x: 15, y: 10, req: 4}, {id: 64, x: 20, y: 10, req: 2}, {id: 65, x: 22, y: 10, req: 1},</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{id: 66, x: 0, y: 11, req: 4}, {id: 67, x: 12, y: 11, req: 5}, {id: 68, x: 16, y: 11, req: 3}, {id: 69, x: 21, y: 11, req: 4}, {id: 70, x: 24, y: 11, req: 1}, {id: 71, x: 28, y: 11, req: 2},</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{id: 72, x: 1, y: 12, req: 1}, {id: 73, x: 3, y: 12, req: 3}, {id: 74, x: 5, y: 12, req: 1}, {id: 75, x: 7, y: 12, req: 4}, {id: 76, x: 10, y: 12, req: 4}, {id: 77, x: 13, y: 12, req: 1}, {id: 78, x: 19, y: 12, req: 2}, {id: 79, x: 22, y: 12, req: 6}, {id: 80, x: 25, y: 12, req: 2}, {id: 81, x: 29, y: 12, req: 1}, {id: 82, x: 30, y: 12, req: 5},</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{id: 83, x: 5, y: 13, req: 2}, {id: 84, x: 10, y: 13, req: 1}, {id: 85, x: 16, y: 13, req: 3}, {id: 86, x: 20, y: 13, req: 1},</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{id: 87, x: 7, y: 14, req: 3}, {id: 88, x: 9, y: 14, req: 2}, {id: 89, x: 18, y: 14, req: 1}, {id: 90, x: 22, y: 14, req: 4}, {id: 91, x: 28, y: 14, req: 4},</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{id: 92, x: 0, y: 15, req: 4}, {id: 93, x: 3, y: 15, req: 7}, {id: 94, x: 5, y: 15, req: 5}, {id: 95, x: 14, y: 15, req: 5}, {id: 96, x: 16, y: 15, req: 8}, {id: 97, x: 28, y: 15, req: 6}, {id: 98, x: 29, y: 15, req: 3},</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{id: 99, x: 18, y: 16, req: 3}, {id: 100, x: 20, y: 16, req: 1}, {id: 101, x: 30, y: 16, req: 4},</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{id: 102, x: 10, y: 17, req: 3}, {id: 103, x: 14, y: 17, req: 2}, {id: 104, x: 20, y: 17, req: 3}, {id: 105, x: 26, y: 17, req: 1},</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{id: 106, x: 10, y: 18, req: 1}, {id: 107, x: 21, y: 18, req: 4}, {id: 108, x: 24, y: 18, req: 3}, {id: 109, x: 27, y: 18, req: 1},</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{id: 110, x: 0, y: 19, req: 1}, {id: 111, x: 2, y: 19, req: 1}, {id: 112, x: 9, y: 19, req: 2}, {id: 113, x: 12, y: 19, req: 4}, {id: 114, x: 14, y: 19, req: 1}, {id: 115, x: 21, y: 19, req: 1}, {id: 116, x: 26, y: 19, req: 1}, {id: 117, x: 28, y: 19, req: 4},</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{id: 118, x: 17, y: 20, req: 3}, {id: 119, x: 20, y: 20, req: 3},</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{id: 120, x: 0, y: 21, req: 1}, {id: 121, x: 2, y: 21, req: 2}, {id: 122, x: 5, y: 21, req: 5}, {id: 123, x: 7, y: 21, req: 2}, {id: 124, x: 9, y: 21, req: 1}, {id: 125, x: 17, y: 21, req: 1}, {id: 126, x: 20, y: 21, req: 2},</p>
+<p class="p1"><span class="Apple-converted-space">          </span>{id: 127, x: 0, y: 22, req: 3}, {id: 128, x: 5, y: 22, req: 5}, {id: 129, x: 20, y: 22, req: 3}, {id: 130, x: 24, y: 22, req: 3}, {id: 131, x: 27, y: 22, req: 4}, {id: 132, x: 30, y: 22, req: 2}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>]</p>
+<p class="p1"><span class="Apple-converted-space">      </span>}</p>
+<p class="p1"><span class="Apple-converted-space">    </span>];</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>function HashiGame() {</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const [currentLevelId, setCurrentLevelId] = useState(1);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const [bridges, setBridges] = useState([]);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const [history, setHistory] = useState([]);<span class="Apple-converted-space"> </span></p>
+<p class="p1"><span class="Apple-converted-space">      </span>const [isWon, setIsWon] = useState(false);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const [message, setMessage] = useState("");</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">      </span>const [isMenuOpen, setIsMenuOpen] = useState(window.innerWidth &gt; 768);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const [scale, setScale] = useState(1);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const containerRef = useRef(null);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const scaleRef = useRef(1);</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">      </span>useEffect(() =&gt; { scaleRef.current = scale; }, [scale]);</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">      </span>const currentLevel = useMemo(() =&gt; LEVELS.find(l =&gt; l.id === currentLevelId), [currentLevelId]);</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">      </span>const potentialBridges = useMemo(() =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>let pb = [];</p>
+<p class="p1"><span class="Apple-converted-space">        </span>let bridgeId = 1;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const islands = currentLevel.islands;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>for (let i = 0; i &lt; islands.length; i++) {</p>
+<p class="p1"><span class="Apple-converted-space">          </span>let a = islands[i];</p>
+<p class="p2"><span class="Apple-converted-space">          </span></p>
+<p class="p1"><span class="Apple-converted-space">          </span>let rightNeighbor = null;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>for (let j = 0; j &lt; islands.length; j++) {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>let b = islands[j];</p>
+<p class="p1"><span class="Apple-converted-space">            </span>if (b.y === a.y &amp;&amp; b.x &gt; a.x) {</p>
+<p class="p1"><span class="Apple-converted-space">              </span>if (!rightNeighbor || b.x &lt; rightNeighbor.x) {</p>
+<p class="p1"><span class="Apple-converted-space">                </span>rightNeighbor = b;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>}</p>
+<p class="p1"><span class="Apple-converted-space">            </span>}</p>
+<p class="p1"><span class="Apple-converted-space">          </span>}</p>
+<p class="p1"><span class="Apple-converted-space">          </span>if (rightNeighbor) {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>pb.push({ id: bridgeId++, from: a.id, to: rightNeighbor.id, type: 'h', count: 0 });</p>
+<p class="p1"><span class="Apple-converted-space">          </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">          </span>let bottomNeighbor = null;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>for (let j = 0; j &lt; islands.length; j++) {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>let b = islands[j];</p>
+<p class="p1"><span class="Apple-converted-space">            </span>if (b.x === a.x &amp;&amp; b.y &gt; a.y) {</p>
+<p class="p1"><span class="Apple-converted-space">              </span>if (!bottomNeighbor || b.y &lt; bottomNeighbor.y) {</p>
+<p class="p1"><span class="Apple-converted-space">                </span>bottomNeighbor = b;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>}</p>
+<p class="p1"><span class="Apple-converted-space">            </span>}</p>
+<p class="p1"><span class="Apple-converted-space">          </span>}</p>
+<p class="p1"><span class="Apple-converted-space">          </span>if (bottomNeighbor) {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>pb.push({ id: bridgeId++, from: a.id, to: bottomNeighbor.id, type: 'v', count: 0 });</p>
+<p class="p1"><span class="Apple-converted-space">          </span>}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>return pb;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>}, [currentLevel]);</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">      </span>useEffect(() =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>setBridges(potentialBridges.map(b =&gt; ({ ...b, count: 0 })));</p>
+<p class="p1"><span class="Apple-converted-space">        </span>setHistory([]);<span class="Apple-converted-space"> </span></p>
+<p class="p1"><span class="Apple-converted-space">        </span>setIsWon(false);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>setMessage("");</p>
+<p class="p1"><span class="Apple-converted-space">        </span>setScale(1);<span class="Apple-converted-space"> </span></p>
+<p class="p1"><span class="Apple-converted-space">        </span>if (window.innerWidth &lt;= 768) {</p>
+<p class="p1"><span class="Apple-converted-space">          </span>setIsMenuOpen(false);<span class="Apple-converted-space"> </span></p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p1"><span class="Apple-converted-space">      </span>}, [potentialBridges, currentLevelId]);</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">      </span>useEffect(() =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const container = containerRef.current;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>if (!container) return;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>let initialDist = 0;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>let initialScale = 1;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>const handleTouchStart = (e) =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">          </span>if (e.touches.length === 2) {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>const dx = e.touches[0].clientX - e.touches[1].clientX;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>const dy = e.touches[0].clientY - e.touches[1].clientY;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>initialDist = Math.hypot(dx, dy);</p>
+<p class="p1"><span class="Apple-converted-space">            </span>initialScale = scaleRef.current;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>};</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>const handleTouchMove = (e) =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">          </span>if (e.touches.length === 2) {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>e.preventDefault();<span class="Apple-converted-space"> </span></p>
+<p class="p1"><span class="Apple-converted-space">            </span>const dx = e.touches[0].clientX - e.touches[1].clientX;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>const dy = e.touches[0].clientY - e.touches[1].clientY;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>const dist = Math.hypot(dx, dy);</p>
+<p class="p1"><span class="Apple-converted-space">            </span>const newScale = Math.min(Math.max(0.3, initialScale * (dist / initialDist)), 3.5);<span class="Apple-converted-space"> </span></p>
+<p class="p1"><span class="Apple-converted-space">            </span>setScale(newScale);</p>
+<p class="p1"><span class="Apple-converted-space">          </span>}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>};</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>container.addEventListener('touchstart', handleTouchStart, { passive: false });</p>
+<p class="p1"><span class="Apple-converted-space">        </span>container.addEventListener('touchmove', handleTouchMove, { passive: false });</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>return () =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">          </span>container.removeEventListener('touchstart', handleTouchStart);</p>
+<p class="p1"><span class="Apple-converted-space">          </span>container.removeEventListener('touchmove', handleTouchMove);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>};</p>
+<p class="p1"><span class="Apple-converted-space">      </span>}, []);</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">      </span>const islandCurrentCounts = useMemo(() =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const counts = {};</p>
+<p class="p1"><span class="Apple-converted-space">        </span>currentLevel.islands.forEach(i =&gt; counts[i.id] = 0);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>bridges.forEach(b =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">          </span>if (counts[b.from] !== undefined) counts[b.from] += b.count;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>if (counts[b.to] !== undefined) counts[b.to] += b.count;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>});</p>
+<p class="p1"><span class="Apple-converted-space">        </span>return counts;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>}, [bridges, currentLevel]);</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">      </span>useEffect(() =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>let allCountsMatch = true;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>for (let island of currentLevel.islands) {</p>
+<p class="p1"><span class="Apple-converted-space">          </span>if (islandCurrentCounts[island.id] !== island.req) {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>allCountsMatch = false;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>break;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>if (!allCountsMatch) {</p>
+<p class="p1"><span class="Apple-converted-space">          </span>setIsWon(false);</p>
+<p class="p1"><span class="Apple-converted-space">          </span>return;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>const adjList = {};</p>
+<p class="p1"><span class="Apple-converted-space">        </span>currentLevel.islands.forEach(i =&gt; adjList[i.id] = []);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>bridges.forEach(b =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">          </span>if (b.count &gt; 0 &amp;&amp; adjList[b.from] &amp;&amp; adjList[b.to]) {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>adjList[b.from].push(b.to);</p>
+<p class="p1"><span class="Apple-converted-space">            </span>adjList[b.to].push(b.from);</p>
+<p class="p1"><span class="Apple-converted-space">          </span>}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>});</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>const visited = new Set();</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const queue = [currentLevel.islands[0].id];</p>
+<p class="p1"><span class="Apple-converted-space">        </span>if(queue.length &gt; 0) visited.add(currentLevel.islands[0].id);</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>while (queue.length &gt; 0) {</p>
+<p class="p1"><span class="Apple-converted-space">          </span>const curr = queue.shift();</p>
+<p class="p1"><span class="Apple-converted-space">          </span>for (let neighbor of adjList[curr]) {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>if (!visited.has(neighbor)) {</p>
+<p class="p1"><span class="Apple-converted-space">              </span>visited.add(neighbor);</p>
+<p class="p1"><span class="Apple-converted-space">              </span>queue.push(neighbor);</p>
+<p class="p1"><span class="Apple-converted-space">            </span>}</p>
+<p class="p1"><span class="Apple-converted-space">          </span>}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>if (visited.size === currentLevel.islands.length) {</p>
+<p class="p1"><span class="Apple-converted-space">          </span>setIsWon(true);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>} else {</p>
+<p class="p1"><span class="Apple-converted-space">          </span>setIsWon(false);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p1"><span class="Apple-converted-space">      </span>}, [bridges, currentLevel, islandCurrentCounts]);</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">      </span>const showMessage = (msg) =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>setMessage(msg);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>setTimeout(() =&gt; setMessage(""), 3000);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>};</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">      </span>const isCrossing = (targetBridge, currentBridges) =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const islandsMap = {};</p>
+<p class="p1"><span class="Apple-converted-space">        </span>currentLevel.islands.forEach(i =&gt; islandsMap[i.id] = i);</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>const tFrom = islandsMap[targetBridge.from];</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const tTo = islandsMap[targetBridge.to];</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>if (!tFrom || !tTo) return false;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>if (targetBridge.type === 'h') {</p>
+<p class="p1"><span class="Apple-converted-space">          </span>const y = tFrom.y;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>const minX = Math.min(tFrom.x, tTo.x);</p>
+<p class="p1"><span class="Apple-converted-space">          </span>const maxX = Math.max(tFrom.x, tTo.x);</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">          </span>for (let b of currentBridges) {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>if (b.count &gt; 0 &amp;&amp; b.type === 'v') {</p>
+<p class="p1"><span class="Apple-converted-space">              </span>const bFrom = islandsMap[b.from];</p>
+<p class="p1"><span class="Apple-converted-space">              </span>const bTo = islandsMap[b.to];</p>
+<p class="p1"><span class="Apple-converted-space">              </span>if (!bFrom || !bTo) continue;</p>
+<p class="p2"><span class="Apple-converted-space">              </span></p>
+<p class="p1"><span class="Apple-converted-space">              </span>const x = bFrom.x;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>const minY = Math.min(bFrom.y, bTo.y);</p>
+<p class="p1"><span class="Apple-converted-space">              </span>const maxY = Math.max(bFrom.y, bTo.y);</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">              </span>if (x &gt; minX &amp;&amp; x &lt; maxX &amp;&amp; y &gt; minY &amp;&amp; y &lt; maxY) {</p>
+<p class="p1"><span class="Apple-converted-space">                </span>return true;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>}</p>
+<p class="p1"><span class="Apple-converted-space">            </span>}</p>
+<p class="p1"><span class="Apple-converted-space">          </span>}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>} else {</p>
+<p class="p1"><span class="Apple-converted-space">          </span>const x = tFrom.x;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>const minY = Math.min(tFrom.y, tTo.y);</p>
+<p class="p1"><span class="Apple-converted-space">          </span>const maxY = Math.max(tFrom.y, tTo.y);</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">          </span>for (let b of currentBridges) {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>if (b.count &gt; 0 &amp;&amp; b.type === 'h') {</p>
+<p class="p1"><span class="Apple-converted-space">              </span>const bFrom = islandsMap[b.from];</p>
+<p class="p1"><span class="Apple-converted-space">              </span>const bTo = islandsMap[b.to];</p>
+<p class="p1"><span class="Apple-converted-space">              </span>if (!bFrom || !bTo) continue;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">              </span>const y = bFrom.y;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>const minX = Math.min(bFrom.x, bTo.x);</p>
+<p class="p1"><span class="Apple-converted-space">              </span>const maxX = Math.max(bFrom.x, bTo.x);</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">              </span>if (y &gt; minY &amp;&amp; y &lt; maxY &amp;&amp; x &gt; minX &amp;&amp; x &lt; maxX) {</p>
+<p class="p1"><span class="Apple-converted-space">                </span>return true;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>}</p>
+<p class="p1"><span class="Apple-converted-space">            </span>}</p>
+<p class="p1"><span class="Apple-converted-space">          </span>}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>return false;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>};</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">      </span>const handleBridgeClick = (bridgeId) =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>if (isWon) return;<span class="Apple-converted-space"> </span></p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>setBridges(prev =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">          </span>setHistory(past =&gt; [...past, prev]);</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">          </span>return prev.map(b =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>if (b.id !== bridgeId) return b;</p>
+<p class="p2"><span class="Apple-converted-space">            </span></p>
+<p class="p1"><span class="Apple-converted-space">            </span>if (b.count === 0 &amp;&amp; isCrossing(b, prev)) {</p>
+<p class="p1"><span class="Apple-converted-space">              </span>showMessage("🚫 橋樑不能交叉喔！請先移除阻擋的橋。");</p>
+<p class="p1"><span class="Apple-converted-space">              </span>setHistory(past =&gt; past.slice(0, -1));</p>
+<p class="p1"><span class="Apple-converted-space">              </span>return b;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>}</p>
+<p class="p2"><span class="Apple-converted-space">            </span></p>
+<p class="p1"><span class="Apple-converted-space">            </span>return { ...b, count: (b.count + 1) % 3 };</p>
+<p class="p1"><span class="Apple-converted-space">          </span>});</p>
+<p class="p1"><span class="Apple-converted-space">        </span>});</p>
+<p class="p1"><span class="Apple-converted-space">      </span>};</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">      </span>const handleUndo = () =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>if (history.length === 0 || isWon) return;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const previousState = history[history.length - 1];</p>
+<p class="p1"><span class="Apple-converted-space">        </span>setBridges(previousState);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>setHistory(past =&gt; past.slice(0, -1));</p>
+<p class="p1"><span class="Apple-converted-space">      </span>};</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">      </span>const handleReset = () =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>setBridges(potentialBridges.map(b =&gt; ({...b, count: 0})));</p>
+<p class="p1"><span class="Apple-converted-space">        </span>setHistory([]);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>};</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">      </span>const maxGridX = Math.max(...currentLevel.islands.map(i =&gt; i.x), 6);<span class="Apple-converted-space"> </span></p>
+<p class="p1"><span class="Apple-converted-space">      </span>const maxGridY = Math.max(...currentLevel.islands.map(i =&gt; i.y), 6);</p>
+<p class="p2"><span class="Apple-converted-space">      </span></p>
+<p class="p1"><span class="Apple-converted-space">      </span>const SCALE = 65;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const PADDING = 85;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const ISLAND_RADIUS = 20;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">      </span>const baseSvgWidth = maxGridX * SCALE + PADDING * 2;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const baseSvgHeight = maxGridY * SCALE + PADDING * 2;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">      </span>const renderBridge = (bridge) =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const islandsMap = {};</p>
+<p class="p1"><span class="Apple-converted-space">        </span>currentLevel.islands.forEach(i =&gt; islandsMap[i.id] = i);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const from = islandsMap[bridge.from];</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const to = islandsMap[bridge.to];</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>if (!from || !to) return null;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>const x1 = from.x * SCALE + PADDING;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const y1 = from.y * SCALE + PADDING;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const x2 = to.x * SCALE + PADDING;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const y2 = to.y * SCALE + PADDING;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>return (</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;g key={bridge.id} className="group cursor-pointer" onClick={() =&gt; handleBridgeClick(bridge.id)}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>{bridge.type === 'h' ? (</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;rect</p>
+<p class="p1"><span class="Apple-converted-space">                </span>x={Math.min(x1, x2) + ISLAND_RADIUS}</p>
+<p class="p1"><span class="Apple-converted-space">                </span>y={y1 - 20}</p>
+<p class="p1"><span class="Apple-converted-space">                </span>width={Math.abs(x1 - x2) - ISLAND_RADIUS * 2}</p>
+<p class="p1"><span class="Apple-converted-space">                </span>height={40}</p>
+<p class="p1"><span class="Apple-converted-space">                </span>className="fill-transparent group-hover:fill-blue-100/50 transition-colors"</p>
+<p class="p1"><span class="Apple-converted-space">              </span>/&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>) : (</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;rect</p>
+<p class="p1"><span class="Apple-converted-space">                </span>x={x1 - 20}</p>
+<p class="p1"><span class="Apple-converted-space">                </span>y={Math.min(y1, y2) + ISLAND_RADIUS}</p>
+<p class="p1"><span class="Apple-converted-space">                </span>width={40}</p>
+<p class="p1"><span class="Apple-converted-space">                </span>height={Math.abs(y1 - y2) - ISLAND_RADIUS * 2}</p>
+<p class="p1"><span class="Apple-converted-space">                </span>className="fill-transparent group-hover:fill-blue-100/50 transition-colors"</p>
+<p class="p1"><span class="Apple-converted-space">              </span>/&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>)}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">            </span>{bridge.count === 1 &amp;&amp; (</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;line x1={x1} y1={y1} x2={x2} y2={y2} stroke="#374151" strokeWidth="6" /&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>)}</p>
+<p class="p1"><span class="Apple-converted-space">            </span>{bridge.count === 2 &amp;&amp; bridge.type === 'h' &amp;&amp; (</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;React.Fragment&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;line x1={x1} y1={y1 - 5} x2={x2} y2={y2 - 5} stroke="#374151" strokeWidth="5" /&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;line x1={x1} y1={y1 + 5} x2={x2} y2={y2 + 5} stroke="#374151" strokeWidth="5" /&gt;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;/React.Fragment&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>)}</p>
+<p class="p1"><span class="Apple-converted-space">            </span>{bridge.count === 2 &amp;&amp; bridge.type === 'v' &amp;&amp; (</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;React.Fragment&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;line x1={x1 - 5} y1={y1} x2={x2 - 5} y2={y2} stroke="#374151" strokeWidth="5" /&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;line x1={x1 + 5} y1={y1} x2={x2 + 5} y2={y2} stroke="#374151" strokeWidth="5" /&gt;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;/React.Fragment&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>)}</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;/g&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>};</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">      </span>const renderIsland = (island) =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const cx = island.x * SCALE + PADDING;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const cy = island.y * SCALE + PADDING;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const current = islandCurrentCounts[island.id];</p>
+<p class="p2"><span class="Apple-converted-space">        </span></p>
+<p class="p1"><span class="Apple-converted-space">        </span>let strokeColor = "#1f2937";</p>
+<p class="p1"><span class="Apple-converted-space">        </span>let bgColor = "#ffffff";</p>
+<p class="p1"><span class="Apple-converted-space">        </span>let textColor = "#1f2937";</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>if (current === island.req) {</p>
+<p class="p1"><span class="Apple-converted-space">          </span>strokeColor = "#10b981"; // 綠色</p>
+<p class="p1"><span class="Apple-converted-space">          </span>bgColor = "#ecfdf5";</p>
+<p class="p1"><span class="Apple-converted-space">          </span>textColor = "#047857";</p>
+<p class="p1"><span class="Apple-converted-space">        </span>} else if (current &gt; island.req) {</p>
+<p class="p1"><span class="Apple-converted-space">          </span>strokeColor = "#ef4444"; // 紅色</p>
+<p class="p1"><span class="Apple-converted-space">          </span>bgColor = "#fef2f2";</p>
+<p class="p1"><span class="Apple-converted-space">          </span>textColor = "#b91c1c";</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>return (</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;g key={`island-${island.id}`}&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;circle</p>
+<p class="p1"><span class="Apple-converted-space">              </span>cx={cx}</p>
+<p class="p1"><span class="Apple-converted-space">              </span>cy={cy}</p>
+<p class="p1"><span class="Apple-converted-space">              </span>r={ISLAND_RADIUS}</p>
+<p class="p1"><span class="Apple-converted-space">              </span>fill={bgColor}</p>
+<p class="p1"><span class="Apple-converted-space">              </span>stroke={strokeColor}</p>
+<p class="p1"><span class="Apple-converted-space">              </span>strokeWidth="4"</p>
+<p class="p1"><span class="Apple-converted-space">              </span>className="transition-colors duration-300"</p>
+<p class="p1"><span class="Apple-converted-space">            </span>/&gt;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;text</p>
+<p class="p1"><span class="Apple-converted-space">              </span>x={cx}</p>
+<p class="p1"><span class="Apple-converted-space">              </span>y={cy}</p>
+<p class="p1"><span class="Apple-converted-space">              </span>textAnchor="middle"</p>
+<p class="p1"><span class="Apple-converted-space">              </span>dominantBaseline="central"</p>
+<p class="p1"><span class="Apple-converted-space">              </span>className="text-xl font-bold font-sans pointer-events-none transition-colors duration-300"</p>
+<p class="p1"><span class="Apple-converted-space">              </span>fill={textColor}</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&gt;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>{island.req}</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;/text&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;/g&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>);</p>
+<p class="p1"><span class="Apple-converted-space">      </span>};</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">      </span>return (</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;div className="min-h-screen p-2 md:p-4 flex flex-col items-center font-sans"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;div className="w-full max-w-5xl bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col h-[95vh] md:max-h-[90vh] border border-slate-200"&gt;</p>
+<p class="p2"><span class="Apple-converted-space">            </span></p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;div className="bg-blue-600 text-white shrink-0 z-20 shadow-md"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;div className="p-3 md:p-4 flex flex-wrap justify-between items-center gap-2"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;div className="flex items-center gap-3"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                  </span>&lt;h1 className="text-xl md:text-2xl font-bold"&gt;🌉 數橋&lt;/h1&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                  </span>&lt;span className="bg-blue-800/50 px-2 py-1 rounded text-xs md:text-sm truncate max-w-[120px] md:max-w-none"&gt;{currentLevel.name}&lt;/span&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;/div&gt;</p>
+<p class="p2"><span class="Apple-converted-space">                </span></p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;div className="flex items-center gap-1 md:gap-2 ml-auto"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                  </span>&lt;button<span class="Apple-converted-space"> </span></p>
+<p class="p1"><span class="Apple-converted-space">                    </span>onClick={handleUndo}</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>disabled={history.length === 0 || isWon}</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>className={`px-3 py-1.5 text-sm rounded-lg font-medium transition-colors flex items-center gap-1</p>
+<p class="p1"><span class="Apple-converted-space">                      </span>${history.length === 0 || isWon<span class="Apple-converted-space"> </span></p>
+<p class="p1"><span class="Apple-converted-space">                        </span>? "bg-blue-800/40 text-blue-300 cursor-not-allowed"<span class="Apple-converted-space"> </span></p>
+<p class="p1"><span class="Apple-converted-space">                        </span>: "bg-amber-500 hover:bg-amber-600 text-white shadow-sm"}`}</p>
+<p class="p1"><span class="Apple-converted-space">                  </span>&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>↩️ &lt;span className="hidden md:inline"&gt;上一步&lt;/span&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                  </span>&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                  </span>&lt;button<span class="Apple-converted-space"> </span></p>
+<p class="p1"><span class="Apple-converted-space">                    </span>onClick={handleReset}</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white text-sm rounded-lg font-medium transition-colors shadow-sm"</p>
+<p class="p1"><span class="Apple-converted-space">                  </span>&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>🔄 &lt;span className="hidden md:inline"&gt;重置&lt;/span&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                  </span>&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                  </span>&lt;button<span class="Apple-converted-space"> </span></p>
+<p class="p1"><span class="Apple-converted-space">                    </span>onClick={() =&gt; setIsMenuOpen(!isMenuOpen)}</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>className="px-3 py-1.5 bg-blue-700 hover:bg-blue-800 text-white text-sm rounded-lg font-medium transition-colors shadow-sm flex items-center gap-1"</p>
+<p class="p1"><span class="Apple-converted-space">                  </span>&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>{isMenuOpen ? '▲ 收起' : '▼ 選單'}</p>
+<p class="p1"><span class="Apple-converted-space">                  </span>&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;/div&gt;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">              </span>{isMenuOpen &amp;&amp; (</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;div className="p-3 md:p-4 pt-0 border-t border-blue-500/50 bg-blue-600"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                  </span>&lt;p className="text-blue-100 opacity-90 mb-3 text-sm"&gt;{currentLevel.description}&lt;/p&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                  </span>&lt;div className="flex flex-wrap gap-2 items-center"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>{LEVELS.map(level =&gt; (</p>
+<p class="p1"><span class="Apple-converted-space">                      </span>&lt;button</p>
+<p class="p1"><span class="Apple-converted-space">                        </span>key={level.id}</p>
+<p class="p1"><span class="Apple-converted-space">                        </span>onClick={() =&gt; setCurrentLevelId(level.id)}</p>
+<p class="p1"><span class="Apple-converted-space">                        </span>className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${</p>
+<p class="p1"><span class="Apple-converted-space">                          </span>currentLevelId === level.id<span class="Apple-converted-space"> </span></p>
+<p class="p1"><span class="Apple-converted-space">                            </span>? "bg-white text-blue-600 shadow-sm"<span class="Apple-converted-space"> </span></p>
+<p class="p1"><span class="Apple-converted-space">                            </span>: "bg-blue-700/50 hover:bg-blue-700 text-white"</p>
+<p class="p1"><span class="Apple-converted-space">                        </span>}`}</p>
+<p class="p1"><span class="Apple-converted-space">                      </span>&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                        </span>{level.name}</p>
+<p class="p1"><span class="Apple-converted-space">                      </span>&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>))}</p>
+<p class="p1"><span class="Apple-converted-space">                  </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>)}</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;/div&gt;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;div className="h-8 md:h-10 shrink-0 flex items-center justify-center bg-slate-100 border-b border-slate-200 z-10 shadow-sm"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>{message &amp;&amp; &lt;span className="text-red-600 font-semibold animate-pulse text-sm"&gt;{message}&lt;/span&gt;}</p>
+<p class="p1"><span class="Apple-converted-space">              </span>{!message &amp;&amp; !isWon &amp;&amp; &lt;span className="text-slate-500 text-xs md:text-sm"&gt;操作提示：兩指捏放可縮放，點空白處切換橋樑。&lt;/span&gt;}</p>
+<p class="p1"><span class="Apple-converted-space">              </span>{isWon &amp;&amp; &lt;span className="text-emerald-600 font-bold text-sm md:text-lg animate-bounce"&gt;🎉 恭喜！完美過關！ 🎉&lt;/span&gt;}</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;/div&gt;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;div<span class="Apple-converted-space"> </span></p>
+<p class="p1"><span class="Apple-converted-space">              </span>ref={containerRef}</p>
+<p class="p1"><span class="Apple-converted-space">              </span>className="p-4 bg-slate-200/50 flex-1 overflow-auto relative custom-scrollbar touch-pan-x touch-pan-y"</p>
+<p class="p1"><span class="Apple-converted-space">              </span>style={{ overscrollBehavior: 'none' }}</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&gt;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;div className="flex justify-center items-center min-w-max min-h-max"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;svg<span class="Apple-converted-space"> </span></p>
+<p class="p1"><span class="Apple-converted-space">                  </span>viewBox={`0 0 ${baseSvgWidth} ${baseSvgHeight}`}<span class="Apple-converted-space"> </span></p>
+<p class="p1"><span class="Apple-converted-space">                  </span>className="bg-white rounded-xl shadow-inner transition-all duration-75 origin-center"</p>
+<p class="p1"><span class="Apple-converted-space">                  </span>style={{<span class="Apple-converted-space"> </span></p>
+<p class="p1"><span class="Apple-converted-space">                    </span>width: `${baseSvgWidth * scale}px`,</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>height: `${baseSvgHeight * scale}px`,</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>backgroundImage: 'radial-gradient(#e2e8f0 2px, transparent 2px)',</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>backgroundSize: '40px 40px'<span class="Apple-converted-space"> </span></p>
+<p class="p1"><span class="Apple-converted-space">                  </span>}}</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                  </span>{bridges.map(renderBridge)}</p>
+<p class="p1"><span class="Apple-converted-space">                  </span>{currentLevel.islands.map(renderIsland)}</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;/svg&gt;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;/div&gt;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;div className="fixed md:absolute bottom-6 right-6 flex flex-col gap-2 z-20"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;button onClick={() =&gt; setScale(s =&gt; Math.min(s + 0.3, 3.5))} className="w-10 h-10 bg-white/90 backdrop-blur rounded-full shadow-lg flex items-center justify-center text-2xl font-bold text-slate-700 border border-slate-200 hover:bg-slate-50 active:scale-95 transition-transform"&gt;＋&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;button onClick={() =&gt; setScale(s =&gt; Math.max(s - 0.3, 0.3))} className="w-10 h-10 bg-white/90 backdrop-blur rounded-full shadow-lg flex items-center justify-center text-2xl font-bold text-slate-700 border border-slate-200 hover:bg-slate-50 active:scale-95 transition-transform"&gt;－&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>&lt;/div&gt;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">              </span>{isWon &amp;&amp; (</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;div className="absolute inset-0 bg-white/60 backdrop-blur-sm flex items-center justify-center z-10"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                  </span>&lt;div className="bg-white p-8 rounded-2xl shadow-2xl text-center transform hover:scale-105 transition-transform border-2 border-emerald-400"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>&lt;div className="text-6xl mb-4"&gt;🏆&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>&lt;h2 className="text-3xl font-bold text-slate-800 mb-2"&gt;大師級工程師！&lt;/h2&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>&lt;p className="text-slate-600 mb-6"&gt;你成功連通了所有的島嶼。&lt;/p&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>{currentLevelId &lt; LEVELS.length ? (</p>
+<p class="p1"><span class="Apple-converted-space">                      </span>&lt;button<span class="Apple-converted-space"> </span></p>
+<p class="p1"><span class="Apple-converted-space">                        </span>onClick={() =&gt; setCurrentLevelId(currentLevelId + 1)}</p>
+<p class="p1"><span class="Apple-converted-space">                        </span>className="px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-white text-lg font-bold rounded-xl shadow-lg hover:shadow-xl transition-all"</p>
+<p class="p1"><span class="Apple-converted-space">                      </span>&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                        </span>挑戰下一關 ➔</p>
+<p class="p1"><span class="Apple-converted-space">                      </span>&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>) : (</p>
+<p class="p1"><span class="Apple-converted-space">                      </span>&lt;button<span class="Apple-converted-space"> </span></p>
+<p class="p1"><span class="Apple-converted-space">                        </span>onClick={handleReset}</p>
+<p class="p1"><span class="Apple-converted-space">                        </span>className="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white text-lg font-bold rounded-xl shadow-lg hover:shadow-xl transition-all"</p>
+<p class="p1"><span class="Apple-converted-space">                      </span>&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                        </span>再玩一次</p>
+<p class="p1"><span class="Apple-converted-space">                      </span>&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                    </span>)}</p>
+<p class="p1"><span class="Apple-converted-space">                  </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">                </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">              </span>)}</p>
+<p class="p1"><span class="Apple-converted-space">            </span>&lt;/div&gt;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">          </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">      </span>);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>// 將 React 元件渲染到畫面上</p>
+<p class="p1"><span class="Apple-converted-space">    </span>const root = ReactDOM.createRoot(document.getElementById('root'));</p>
+<p class="p1"><span class="Apple-converted-space">    </span>root.render(&lt;HashiGame /&gt;);</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;/script&gt;</p>
+<p class="p1">&lt;/body&gt;</p>
+<p class="p1">&lt;/html&gt;</p>
+</body>
+</html>
