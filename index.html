@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>數橋 (Hashi) 教學互動遊戲 - 支援多人連線</title>
+  <title>數橋 (Hashi) 教學互動遊戲 - 多人合作繪圖版</title>
   
   <!-- 載入 Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -54,6 +54,9 @@
   <script type="text/babel">
     const { useState, useEffect, useMemo, useRef } = React;
 
+    // === 多人連線分配用的調色盤 ===
+    const COLORS = ['#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316', '#84cc16', '#a855f7'];
+
     // === 關卡資料 ===
     const LEVELS = [
       { id: 1, name: "範例一 (暖身)", description: "這是講義上的第一個範例。試著找出不交叉的正確連法！", islands: [{ id: 1, x: 0, y: 0, req: 4 }, { id: 2, x: 2, y: 0, req: 5 }, { id: 3, x: 6, y: 0, req: 2 }, { id: 4, x: 3, y: 1, req: 2 }, { id: 5, x: 5, y: 1, req: 3 }, { id: 6, x: 0, y: 2, req: 4 }, { id: 7, x: 2, y: 3, req: 4 }, { id: 8, x: 4, y: 3, req: 2 }, { id: 9, x: 0, y: 4, req: 5 }, { id: 10, x: 5, y: 4, req: 2 }, { id: 11, x: 2, y: 5, req: 2 }, { id: 12, x: 6, y: 5, req: 3 }, { id: 13, x: 0, y: 6, req: 3 }, { id: 14, x: 4, y: 6, req: 1 }] },
@@ -67,7 +70,7 @@
       { id: 9, name: "實戰七 (史詩級)", description: "終極挑戰！這是一張超大型地圖，考驗你的耐心與觀察力！", islands: [{id: 1, x: 0, y: 0, req: 2}, {id: 2, x: 2, y: 0, req: 4}, {id: 3, x: 6, y: 0, req: 2}, {id: 4, x: 9, y: 0, req: 1}, {id: 5, x: 11, y: 0, req: 1}, {id: 6, x: 13, y: 0, req: 5}, {id: 7, x: 16, y: 0, req: 6}, {id: 8, x: 21, y: 0, req: 4}, {id: 9, x: 28, y: 0, req: 2}, {id: 10, x: 30, y: 0, req: 1}, {id: 11, x: 1, y: 1, req: 1}, {id: 12, x: 4, y: 1, req: 2}, {id: 13, x: 10, y: 1, req: 2}, {id: 14, x: 12, y: 1, req: 2}, {id: 15, x: 14, y: 1, req: 1}, {id: 16, x: 0, y: 2, req: 1}, {id: 17, x: 6, y: 2, req: 5}, {id: 18, x: 13, y: 2, req: 2}, {id: 19, x: 23, y: 2, req: 2}, {id: 20, x: 25, y: 2, req: 3}, {id: 21, x: 2, y: 3, req: 4}, {id: 22, x: 8, y: 3, req: 4}, {id: 23, x: 11, y: 3, req: 2}, {id: 24, x: 15, y: 3, req: 7}, {id: 25, x: 21, y: 3, req: 4}, {id: 26, x: 30, y: 3, req: 2}, {id: 27, x: 0, y: 4, req: 3}, {id: 28, x: 2, y: 4, req: 3}, {id: 29, x: 12, y: 4, req: 7}, {id: 30, x: 14, y: 4, req: 4}, {id: 31, x: 17, y: 4, req: 1}, {id: 32, x: 20, y: 4, req: 3}, {id: 33, x: 22, y: 4, req: 7}, {id: 34, x: 25, y: 4, req: 2}, {id: 35, x: 16, y: 5, req: 2}, {id: 36, x: 18, y: 5, req: 1}, {id: 37, x: 21, y: 5, req: 3}, {id: 38, x: 24, y: 5, req: 2}, {id: 39, x: 27, y: 5, req: 4}, {id: 40, x: 30, y: 5, req: 2}, {id: 41, x: 9, y: 6, req: 2}, {id: 42, x: 11, y: 6, req: 3}, {id: 43, x: 15, y: 6, req: 3}, {id: 44, x: 17, y: 6, req: 5}, {id: 45, x: 20, y: 6, req: 5}, {id: 46, x: 26, y: 6, req: 1}, {id: 47, x: 11, y: 7, req: 2}, {id: 48, x: 15, y: 7, req: 2}, {id: 49, x: 16, y: 7, req: 2}, {id: 50, x: 19, y: 7, req: 3}, {id: 51, x: 3, y: 8, req: 2}, {id: 52, x: 11, y: 8, req: 2}, {id: 53, x: 15, y: 8, req: 2}, {id: 54, x: 17, y: 8, req: 3}, {id: 55, x: 19, y: 8, req: 2}, {id: 56, x: 21, y: 8, req: 3}, {id: 57, x: 30, y: 8, req: 3}, {id: 58, x: 2, y: 9, req: 3}, {id: 59, x: 23, y: 9, req: 2}, {id: 60, x: 26, y: 9, req: 4}, {id: 61, x: 29, y: 9, req: 3}, {id: 62, x: 12, y: 10, req: 6}, {id: 63, x: 15, y: 10, req: 4}, {id: 64, x: 20, y: 10, req: 2}, {id: 65, x: 22, y: 10, req: 1}, {id: 66, x: 0, y: 11, req: 4}, {id: 67, x: 12, y: 11, req: 5}, {id: 68, x: 16, y: 11, req: 3}, {id: 69, x: 21, y: 11, req: 4}, {id: 70, x: 24, y: 11, req: 1}, {id: 71, x: 28, y: 11, req: 2}, {id: 72, x: 1, y: 12, req: 1}, {id: 73, x: 3, y: 12, req: 3}, {id: 74, x: 5, y: 12, req: 1}, {id: 75, x: 7, y: 12, req: 4}, {id: 76, x: 10, y: 12, req: 4}, {id: 77, x: 13, y: 12, req: 1}, {id: 78, x: 19, y: 12, req: 2}, {id: 79, x: 22, y: 12, req: 6}, {id: 80, x: 25, y: 12, req: 2}, {id: 81, x: 29, y: 12, req: 1}, {id: 82, x: 30, y: 12, req: 5}, {id: 83, x: 5, y: 13, req: 2}, {id: 84, x: 10, y: 13, req: 1}, {id: 85, x: 16, y: 13, req: 3}, {id: 86, x: 20, y: 13, req: 1}, {id: 87, x: 7, y: 14, req: 3}, {id: 88, x: 9, y: 14, req: 2}, {id: 89, x: 18, y: 14, req: 1}, {id: 90, x: 22, y: 14, req: 4}, {id: 91, x: 28, y: 14, req: 4}, {id: 92, x: 0, y: 15, req: 4}, {id: 93, x: 3, y: 15, req: 7}, {id: 94, x: 5, y: 15, req: 5}, {id: 95, x: 14, y: 15, req: 5}, {id: 96, x: 16, y: 15, req: 8}, {id: 97, x: 28, y: 15, req: 6}, {id: 98, x: 29, y: 15, req: 3}, {id: 99, x: 18, y: 16, req: 3}, {id: 100, x: 20, y: 16, req: 1}, {id: 101, x: 30, y: 16, req: 4}, {id: 102, x: 10, y: 17, req: 3}, {id: 103, x: 14, y: 17, req: 2}, {id: 104, x: 20, y: 17, req: 3}, {id: 105, x: 26, y: 17, req: 1}, {id: 106, x: 10, y: 18, req: 1}, {id: 107, x: 21, y: 18, req: 4}, {id: 108, x: 24, y: 18, req: 3}, {id: 109, x: 27, y: 18, req: 1}, {id: 110, x: 0, y: 19, req: 1}, {id: 111, x: 2, y: 19, req: 1}, {id: 112, x: 9, y: 19, req: 2}, {id: 113, x: 12, y: 19, req: 4}, {id: 114, x: 14, y: 19, req: 1}, {id: 115, x: 21, y: 19, req: 1}, {id: 116, x: 26, y: 19, req: 1}, {id: 117, x: 28, y: 19, req: 4}, {id: 118, x: 17, y: 20, req: 3}, {id: 119, x: 20, y: 20, req: 3}, {id: 120, x: 0, y: 21, req: 1}, {id: 121, x: 2, y: 21, req: 2}, {id: 122, x: 5, y: 21, req: 5}, {id: 123, x: 7, y: 21, req: 2}, {id: 124, x: 9, y: 21, req: 1}, {id: 125, x: 17, y: 21, req: 1}, {id: 126, x: 20, y: 21, req: 2}, {id: 127, x: 0, y: 22, req: 3}, {id: 128, x: 5, y: 22, req: 5}, {id: 129, x: 20, y: 22, req: 3}, {id: 130, x: 24, y: 22, req: 3}, {id: 131, x: 27, y: 22, req: 4}, {id: 132, x: 30, y: 22, req: 2}] }
     ];
 
-    // 工具函數：產生空橋樑狀態
+    // 工具函數：產生空橋樑狀態 (加入 owner 屬性記錄橋是誰畫的)
     const generateEmptyBridges = (level) => {
       let pb = [];
       let bridgeId = 1;
@@ -81,7 +84,7 @@
             if (!rightNeighbor || b.x < rightNeighbor.x) rightNeighbor = b;
           }
         }
-        if (rightNeighbor) pb.push({ id: bridgeId++, from: a.id, to: rightNeighbor.id, type: 'h', count: 0 });
+        if (rightNeighbor) pb.push({ id: bridgeId++, from: a.id, to: rightNeighbor.id, type: 'h', count: 0, owner: null });
 
         let bottomNeighbor = null;
         for (let j = 0; j < islands.length; j++) {
@@ -90,7 +93,7 @@
             if (!bottomNeighbor || b.y < bottomNeighbor.y) bottomNeighbor = b;
           }
         }
-        if (bottomNeighbor) pb.push({ id: bridgeId++, from: a.id, to: bottomNeighbor.id, type: 'v', count: 0 });
+        if (bottomNeighbor) pb.push({ id: bridgeId++, from: a.id, to: bottomNeighbor.id, type: 'v', count: 0, owner: null });
       }
       return pb;
     };
@@ -110,26 +113,27 @@
       const [isMultiplayer, setIsMultiplayer] = useState(false);
       const [roomId, setRoomId] = useState("");
       const [isHost, setIsHost] = useState(false);
+      const [myPeerId, setMyPeerId] = useState(null); // 紀錄自己的連線 ID
       
       // 玩家與名稱管理
       const [showJoinModal, setShowJoinModal] = useState(false);
       const [tempRoomId, setTempRoomId] = useState("");
       const [tempPlayerName, setTempPlayerName] = useState("");
-      const [playersList, setPlayersList] = useState([]); // [{id, name, isHost}]
+      const [playersList, setPlayersList] = useState([]); // [{id, name, isHost, color}]
 
-      // Refs：用來在 PeerJS 的非同步回呼中取得「最新」的狀態，避免不同步
+      // Refs：用來在 PeerJS 的非同步回呼中取得「最新」的狀態
       const peerRef = useRef(null);
       const clientConnRef = useRef(null);
-      const hostConnsRef = useRef({}); // { peerId: conn }
+      const hostConnsRef = useRef({}); 
       const playersRef = useRef([]); 
-      const stateRef = useRef({ bridges: [], levelId: 1, isMultiplayer: false, isHost: false });
+      const stateRef = useRef({ bridges: [], levelId: 1, isMultiplayer: false, isHost: false, myPeerId: null });
 
       const currentLevel = useMemo(() => LEVELS.find(l => l.id === currentLevelId), [currentLevelId]);
 
-      // 隨時同步最新狀態到 Ref，讓連線系統取用
+      // 隨時同步最新狀態到 Ref，讓網路事件能存取到最新變數
       useEffect(() => {
-        stateRef.current = { bridges, levelId: currentLevelId, isMultiplayer, isHost };
-      }, [bridges, currentLevelId, isMultiplayer, isHost]);
+        stateRef.current = { bridges, levelId: currentLevelId, isMultiplayer, isHost, myPeerId };
+      }, [bridges, currentLevelId, isMultiplayer, isHost, myPeerId]);
 
       const potentialBridges = useMemo(() => generateEmptyBridges(currentLevel), [currentLevel]);
 
@@ -158,6 +162,7 @@
         setIsMultiplayer(false);
         setRoomId("");
         setIsHost(false);
+        setMyPeerId(null);
         setPlayersList([]);
         playersRef.current = [];
         hostConnsRef.current = {};
@@ -174,13 +179,14 @@
         const fullRoomId = 'hashi-game-comic-' + roomCode; 
         const peer = new Peer(fullRoomId);
 
-        // 如果成功開啟此 ID，代表該房號沒人用，由我成為「主機 👑」
+        // 1. 如果成功佔用 ID，成為「主機 👑」
         peer.on('open', (id) => {
           setIsHost(true);
           setIsMultiplayer(true);
           setRoomId(roomCode);
+          setMyPeerId(id);
           
-          const initialPlayers = [{ id, name: playerName, isHost: true }];
+          const initialPlayers = [{ id, name: playerName, isHost: true, color: '#3b82f6' }];
           setPlayersList(initialPlayers);
           playersRef.current = initialPlayers;
           
@@ -189,23 +195,19 @@
 
             conn.on('data', (msg) => {
                if (msg.type === 'JOIN') {
-                 // 有玩家加入，記錄他的暱稱
-                 const newPlayer = { id: conn.peer, name: msg.data.name, isHost: false };
+                 const newColor = COLORS[playersRef.current.length % COLORS.length];
+                 const newPlayer = { id: conn.peer, name: msg.data.name, isHost: false, color: newColor };
                  playersRef.current = [...playersRef.current, newPlayer];
                  setPlayersList([...playersRef.current]);
                  
-                 // 將最新名單與當前關卡/橋樑狀態發給所有人
                  broadcastToAll('SYNC_PLAYERS', playersRef.current);
-                 conn.send({ type: 'SYNC_STATE', data: stateRef.current });
+                 conn.send({ type: 'SYNC_FULL_STATE', data: stateRef.current });
                } 
-               else if (msg.type === 'ACTION') {
-                 // 接收到某位玩家的操作 (包含最新的 bridges 與 levelId)
-                 if (msg.data.bridges) setBridges(msg.data.bridges);
-                 if (msg.data.levelId && msg.data.levelId !== stateRef.current.levelId) {
-                    setCurrentLevelId(msg.data.levelId);
-                 }
-                 // 把這份最新狀態轉發給除了發送者以外的其他所有人
-                 broadcastToAll('SYNC_STATE', msg.data, conn.peer);
+               else if (msg.type === 'UPDATE_BRIDGE') {
+                 // 接收到某位玩家的「單一橋樑更新」 -> 只更新那一根橋，避免互相覆蓋
+                 setBridges(prev => prev.map(b => b.id === msg.data.bridgeId ? { ...b, count: msg.data.count, owner: msg.data.owner } : b));
+                 // 轉發給其他玩家
+                 broadcastToAll('UPDATE_BRIDGE', msg.data, conn.peer);
                }
             });
 
@@ -218,13 +220,14 @@
           });
         });
 
-        // 若 ID 已經被佔用，代表房間已存在，由我成為「玩家 👤」加入
+        // 2. 若 ID 已經被佔用，代表房間已存在，成為「玩家 👤」加入
         peer.on('error', (err) => {
           if (err.type === 'unavailable-id') {
-             peer.destroy(); // 銷毀嘗試當主機的失敗實例
+             peer.destroy(); 
              const clientPeer = new Peer();
              
-             clientPeer.on('open', () => {
+             clientPeer.on('open', (id) => {
+               setMyPeerId(id);
                const conn = clientPeer.connect(fullRoomId);
                clientConnRef.current = conn;
                
@@ -232,18 +235,21 @@
                  setIsHost(false);
                  setIsMultiplayer(true);
                  setRoomId(roomCode);
-                 // 告訴主機我的暱稱
                  conn.send({ type: 'JOIN', data: { name: playerName } });
                });
 
                conn.on('data', (msg) => {
                  if (msg.type === 'SYNC_PLAYERS') {
                    setPlayersList(msg.data);
-                 } else if (msg.type === 'SYNC_STATE') {
+                 } else if (msg.type === 'SYNC_FULL_STATE') {
+                   // 房主更換關卡或初始化時，全面覆蓋狀態
                    if (msg.data.bridges) setBridges(msg.data.bridges);
                    if (msg.data.levelId && msg.data.levelId !== stateRef.current.levelId) {
                       setCurrentLevelId(msg.data.levelId);
                    }
+                 } else if (msg.type === 'UPDATE_BRIDGE') {
+                   // 收到他人畫的橋樑，局部更新
+                   setBridges(prev => prev.map(b => b.id === msg.data.bridgeId ? { ...b, count: msg.data.count, owner: msg.data.owner } : b));
                  }
                });
 
@@ -367,37 +373,45 @@
         return false;
       };
 
-      // ===== 橋樑點擊與同步邏輯 =====
+      // ===== 橋樑點擊與同步邏輯 (支援多人同時點擊) =====
       const handleBridgeClick = (bridgeId) => {
         if (isWon) return; 
 
-        let newBridgesState = [];
+        let shouldBroadcast = false;
+        let syncData = null;
+
         setBridges(prev => {
+          const target = prev.find(b => b.id === bridgeId);
+          if (!target) return prev;
+          
+          if (target.count === 0 && isCrossing(target, prev)) {
+            showMessage("🚫 橋樑不能交叉喔！請先移除阻擋的橋。");
+            if (!stateRef.current.isMultiplayer) setHistory(past => past.slice(0, -1));
+            return prev;
+          }
+          
           if (!stateRef.current.isMultiplayer) setHistory(past => [...past, prev]);
+
+          const newCount = (target.count + 1) % 3;
+          // 若有連線則記錄這條橋是我畫的
+          const newOwner = newCount > 0 ? stateRef.current.myPeerId : null;
           
-          const next = prev.map(b => {
-            if (b.id !== bridgeId) return b;
-            if (b.count === 0 && isCrossing(b, prev)) {
-              showMessage("🚫 橋樑不能交叉喔！請先移除阻擋的橋。");
-              if (!stateRef.current.isMultiplayer) setHistory(past => past.slice(0, -1));
-              return b;
-            }
-            return { ...b, count: (b.count + 1) % 3 };
-          });
-          
-          newBridgesState = next; // 提取更新後的狀態供網路發送
-          return next;
+          shouldBroadcast = true;
+          syncData = { bridgeId, count: newCount, owner: newOwner };
+
+          return prev.map(b => b.id === bridgeId ? { ...b, count: newCount, owner: newOwner } : b);
         });
 
-        // 若為多人模式，發送最新動作給全場
-        if (stateRef.current.isMultiplayer) {
-          const syncData = { bridges: newBridgesState, levelId: stateRef.current.levelId };
-          if (stateRef.current.isHost) {
-            broadcastToAll('SYNC_STATE', syncData);
-          } else if (clientConnRef.current) {
-            clientConnRef.current.send({ type: 'ACTION', data: syncData });
+        // 廣播此條橋的變動，不影響其他正在點擊橋樑的玩家
+        setTimeout(() => {
+          if (shouldBroadcast && stateRef.current.isMultiplayer) {
+            if (stateRef.current.isHost) {
+              broadcastToAll('UPDATE_BRIDGE', syncData);
+            } else if (clientConnRef.current) {
+              clientConnRef.current.send({ type: 'UPDATE_BRIDGE', data: syncData });
+            }
           }
-        }
+        }, 0);
       };
 
       const handleUndo = () => {
@@ -412,7 +426,7 @@
         setBridges(empty);
         if (isMultiplayer) {
           const syncData = { bridges: empty, levelId: currentLevelId };
-          if (isHost) broadcastToAll('SYNC_STATE', syncData);
+          if (isHost) broadcastToAll('SYNC_FULL_STATE', syncData);
           else if (clientConnRef.current) clientConnRef.current.send({ type: 'ACTION', data: syncData });
         } else {
           setHistory([]);
@@ -420,12 +434,14 @@
       };
 
       const handleLevelChange = (newLevelId) => {
+        // 多人模式下，只有主機可以換關卡
+        if (isMultiplayer && !isHost) return;
+
         setCurrentLevelId(newLevelId);
         const empty = generateEmptyBridges(LEVELS.find(l => l.id === newLevelId));
-        if (isMultiplayer) {
+        if (isMultiplayer && isHost) {
           const syncData = { bridges: empty, levelId: newLevelId };
-          if (isHost) broadcastToAll('SYNC_STATE', syncData);
-          else if (clientConnRef.current) clientConnRef.current.send({ type: 'ACTION', data: syncData });
+          broadcastToAll('SYNC_FULL_STATE', syncData);
         }
       };
 
@@ -443,7 +459,7 @@
       const svgWidthBase = maxGridX * SCALE + PADDING * 2;
       const svgHeightBase = maxGridY * SCALE + PADDING * 2;
 
-      // === 繪圖相關 ===
+      // === 繪製橋樑 ===
       const renderBridge = (bridge) => {
         const islandsMap = {};
         currentLevel.islands.forEach(i => islandsMap[i.id] = i);
@@ -457,26 +473,42 @@
         const x2 = to.x * SCALE + PADDING;
         const y2 = to.y * SCALE + PADDING;
 
+        // ===== 決定橋樑的顏色與透明度 =====
+        let lineStroke = "#1e293b"; // 預設(自己畫的): 粗黑色
+        let lineOpacity = 1;
+
+        if (stateRef.current.isMultiplayer && bridge.count > 0 && bridge.owner && bridge.owner !== stateRef.current.myPeerId) {
+            // 如果是別人畫的，找出對方的專屬顏色，並給予半透明效果
+            const ownerObj = playersList.find(p => p.id === bridge.owner);
+            lineStroke = ownerObj ? ownerObj.color : "#94a3b8"; 
+            lineOpacity = 0.5; // 顯示為半透明
+        }
+
         return (
           <g key={bridge.id} className="group cursor-pointer" onClick={() => handleBridgeClick(bridge.id)}>
+            {/* 隱形感應區 */}
             {bridge.type === 'h' ? (
               <rect x={Math.min(x1, x2) + ISLAND_RADIUS} y={y1 - 20} width={Math.abs(x1 - x2) - ISLAND_RADIUS * 2} height={40} className="fill-transparent group-hover:fill-yellow-300/30 transition-colors" />
             ) : (
               <rect x={x1 - 20} y={Math.min(y1, y2) + ISLAND_RADIUS} width={40} height={Math.abs(y1 - y2) - ISLAND_RADIUS * 2} className="fill-transparent group-hover:fill-yellow-300/30 transition-colors" />
             )}
+            
+            {/* 一座橋 */}
             {bridge.count === 1 && (
-              <line x1={x1} y1={y1} x2={x2} y2={y2} stroke="#1e293b" strokeWidth="6" strokeLinecap="round" />
+              <line x1={x1} y1={y1} x2={x2} y2={y2} stroke={lineStroke} strokeWidth="6" strokeLinecap="round" strokeOpacity={lineOpacity} className="transition-all duration-300" />
             )}
+            
+            {/* 兩座橋 */}
             {bridge.count === 2 && bridge.type === 'h' && (
               <React.Fragment>
-                <line x1={x1} y1={y1 - 5} x2={x2} y2={y2 - 5} stroke="#1e293b" strokeWidth="5" strokeLinecap="round" />
-                <line x1={x1} y1={y1 + 5} x2={x2} y2={y2 + 5} stroke="#1e293b" strokeWidth="5" strokeLinecap="round" />
+                <line x1={x1} y1={y1 - 5} x2={x2} y2={y2 - 5} stroke={lineStroke} strokeWidth="5" strokeLinecap="round" strokeOpacity={lineOpacity} className="transition-all duration-300" />
+                <line x1={x1} y1={y1 + 5} x2={x2} y2={y2 + 5} stroke={lineStroke} strokeWidth="5" strokeLinecap="round" strokeOpacity={lineOpacity} className="transition-all duration-300" />
               </React.Fragment>
             )}
             {bridge.count === 2 && bridge.type === 'v' && (
               <React.Fragment>
-                <line x1={x1 - 5} y1={y1} x2={x2 - 5} y2={y2} stroke="#1e293b" strokeWidth="5" strokeLinecap="round" />
-                <line x1={x1 + 5} y1={y1} x2={x2 + 5} y2={y2} stroke="#1e293b" strokeWidth="5" strokeLinecap="round" />
+                <line x1={x1 - 5} y1={y1} x2={x2 - 5} y2={y2} stroke={lineStroke} strokeWidth="5" strokeLinecap="round" strokeOpacity={lineOpacity} className="transition-all duration-300" />
+                <line x1={x1 + 5} y1={y1} x2={x2 + 5} y2={y2} stroke={lineStroke} strokeWidth="5" strokeLinecap="round" strokeOpacity={lineOpacity} className="transition-all duration-300" />
               </React.Fragment>
             )}
           </g>
@@ -538,11 +570,20 @@
 
                 {isHeaderCollapsed && (
                   <div className="flex items-center gap-2 flex-wrap">
-                    <select value={currentLevelId} onChange={(e) => handleLevelChange(Number(e.target.value))} className="px-2 py-1 rounded-md border-2 border-slate-800 font-bold bg-white text-slate-800 text-sm outline-none cursor-pointer shadow-[2px_2px_0px_rgba(30,41,59,1)]">
+                    <select 
+                      disabled={isMultiplayer && !isHost}
+                      value={currentLevelId} 
+                      onChange={(e) => handleLevelChange(Number(e.target.value))} 
+                      className={`px-2 py-1 rounded-md border-2 border-slate-800 font-bold bg-white text-slate-800 text-sm outline-none shadow-[2px_2px_0px_rgba(30,41,59,1)] ${isMultiplayer && !isHost ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
+                    >
                       {LEVELS.map(level => <option key={level.id} value={level.id}>{level.name}</option>)}
                     </select>
                     {!isMultiplayer && <button onClick={handleUndo} disabled={history.length === 0 || isWon} className="px-2 py-1 bg-white border-2 border-slate-800 rounded-md font-bold text-sm shadow-[2px_2px_0px_rgba(30,41,59,1)] hover:bg-slate-100 disabled:opacity-50">↩️</button>}
-                    <button onClick={handleReset} className="px-2 py-1 bg-red-500 text-white border-2 border-slate-800 rounded-md font-bold text-sm shadow-[2px_2px_0px_rgba(30,41,59,1)] hover:bg-red-600">🔄</button>
+                    
+                    {(!isMultiplayer || isHost) ? (
+                      <button onClick={handleReset} className="px-2 py-1 bg-red-500 text-white border-2 border-slate-800 rounded-md font-bold text-sm shadow-[2px_2px_0px_rgba(30,41,59,1)] hover:bg-red-600">🔄 重置</button>
+                    ) : null}
+
                     <button onClick={() => setIsHeaderCollapsed(false)} className="ml-1 bg-slate-800 text-white px-2 py-1 rounded-md font-bold text-sm shadow-[2px_2px_0px_rgba(0,0,0,0.3)] hover:bg-slate-700">🔽 展開</button>
                   </div>
                 )}
@@ -583,7 +624,7 @@
                       <p className="text-slate-700 text-xs md:text-sm font-bold leading-relaxed">{currentLevel.description}</p>
                       {isMultiplayer && (
                         <div className="mt-2 text-xs text-emerald-700 font-bold bg-emerald-100 p-1 rounded border border-emerald-300">
-                          已停用「上一步」功能以防同學畫面互搶。
+                          多人模式中，已停用「上一步」功能以防同學畫面互搶。
                         </div>
                       )}
                     </div>
@@ -592,14 +633,16 @@
                   <div className="flex flex-wrap gap-2 items-center mt-1">
                     <span className="font-bold text-slate-800 mr-1 text-sm md:text-base">關卡選擇：</span>
                     <select
+                      disabled={isMultiplayer && !isHost}
                       value={currentLevelId}
                       onChange={(e) => handleLevelChange(Number(e.target.value))}
-                      className="px-3 py-1.5 rounded-md border-2 border-slate-800 font-bold bg-white text-slate-800 text-sm md:text-base outline-none cursor-pointer shadow-[3px_3px_0px_rgba(30,41,59,1)]"
+                      className={`px-3 py-1.5 rounded-md border-2 border-slate-800 font-bold bg-white text-slate-800 text-sm md:text-base outline-none shadow-[3px_3px_0px_rgba(30,41,59,1)] ${isMultiplayer && !isHost ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}
                     >
                       {LEVELS.map(level => (
                         <option key={level.id} value={level.id}>{level.name}</option>
                       ))}
                     </select>
+                    {isMultiplayer && !isHost && <span className="text-xs font-bold text-slate-700 bg-white/50 px-2 py-1 rounded">(僅房主可切換關卡)</span>}
                     
                     <div className="ml-auto flex gap-2">
                       {!isMultiplayer && (
@@ -611,12 +654,15 @@
                           ↩️ 復原
                         </button>
                       )}
-                      <button 
-                        onClick={handleReset}
-                        className="px-3 md:px-4 py-1.5 bg-red-500 text-white border-2 border-slate-800 rounded-md font-bold text-sm md:text-base shadow-[3px_3px_0px_rgba(30,41,59,1)] hover:bg-red-600 active:translate-y-1 active:shadow-none transition-all"
-                      >
-                        🔄 重置全場
-                      </button>
+                      
+                      {(!isMultiplayer || isHost) ? (
+                        <button 
+                          onClick={handleReset}
+                          className="px-3 md:px-4 py-1.5 bg-red-500 text-white border-2 border-slate-800 rounded-md font-bold text-sm md:text-base shadow-[3px_3px_0px_rgba(30,41,59,1)] hover:bg-red-600 active:translate-y-1 active:shadow-none transition-all"
+                        >
+                          🔄 重置全場
+                        </button>
+                      ) : null}
                     </div>
                   </div>
                 </React.Fragment>
@@ -626,10 +672,10 @@
             {/* 線上玩家名單 (展開狀態且為多人連線時顯示) */}
             {isMultiplayer && !isHeaderCollapsed && (
               <div className="px-4 py-2 bg-white border-b-2 border-slate-800 flex flex-wrap gap-2 items-center z-10 shadow-sm shrink-0">
-                <span className="font-black text-slate-800 text-sm">👥 房內同學 ({playersList.length})：</span>
+                <span className="font-black text-slate-800 text-sm">👥 線上玩家 ({playersList.length})：</span>
                 {playersList.map((p, idx) => (
-                  <span key={idx} className={`px-2 py-0.5 rounded border-2 border-slate-800 text-xs font-bold ${p.isHost ? 'bg-yellow-200 text-yellow-800' : 'bg-slate-200 text-slate-700'}`}>
-                    {p.name} {p.isHost && '👑'}
+                  <span key={idx} className="px-2 py-0.5 rounded border-2 border-slate-800 text-xs font-bold bg-slate-100 text-slate-800 flex items-center shadow-sm" style={{ borderLeftColor: p.id === myPeerId ? '#1e293b' : p.color, borderLeftWidth: '6px' }}>
+                    {p.name} {p.isHost && '👑'} {p.id === myPeerId && '(你)'}
                   </span>
                 ))}
               </div>
