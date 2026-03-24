@@ -44,6 +44,14 @@
     .custom-scrollbar::-webkit-scrollbar-thumb:hover {
       background: #94a3b8;
     }
+    /* 解答的紅色虛線動畫 */
+    .solution-line {
+      stroke-dasharray: 10 10;
+      animation: dashMove 2s linear infinite;
+    }
+    @keyframes dashMove {
+      to { stroke-dashoffset: -20; }
+    }
   </style>
 </head>
 <body style="background-color: #fdf5e6; background-image: radial-gradient(#d3c5ab 2px, transparent 2px); background-size: 12px 12px; margin: 0; padding: 0;">
@@ -67,8 +75,126 @@
       { id: 6, name: "實戰四 (7x7)", description: "看似分散，但其實只有唯一的連通方式喔！", islands: [{id: 1, x: 0, y: 0, req: 3}, {id: 2, x: 3, y: 0, req: 3}, {id: 3, x: 6, y: 0, req: 3}, {id: 4, x: 1, y: 1, req: 2}, {id: 5, x: 4, y: 2, req: 3}, {id: 6, x: 6, y: 2, req: 4}, {id: 7, x: 0, y: 5, req: 2}, {id: 8, x: 4, y: 5, req: 2}, {id: 9, x: 1, y: 6, req: 3}, {id: 10, x: 3, y: 6, req: 4}, {id: 11, x: 6, y: 6, req: 3}] },
       { id: 7, name: "實戰五 (7x7)", description: "完美對稱的謎題，保持冷靜一層層解開吧！", islands: [{id: 1, x: 0, y: 0, req: 2}, {id: 2, x: 3, y: 0, req: 4}, {id: 3, x: 6, y: 0, req: 3}, {id: 4, x: 1, y: 1, req: 2}, {id: 5, x: 5, y: 1, req: 2}, {id: 6, x: 6, y: 2, req: 1}, {id: 7, x: 1, y: 3, req: 5}, {id: 8, x: 3, y: 3, req: 4}, {id: 9, x: 5, y: 3, req: 3}, {id: 10, x: 0, y: 4, req: 1}, {id: 11, x: 3, y: 5, req: 1}, {id: 12, x: 1, y: 6, req: 2}, {id: 13, x: 5, y: 6, req: 2}] },
       { id: 8, name: "實戰六 (15x15)", description: "已完美對齊矩陣！15x15 的高難度迷宮。", islands: [{id: 1, x: 2, y: 0, req: 3}, {id: 2, x: 10, y: 0, req: 3}, {id: 3, x: 14, y: 0, req: 3}, {id: 4, x: 4, y: 1, req: 4}, {id: 5, x: 7, y: 1, req: 4}, {id: 6, x: 9, y: 1, req: 2}, {id: 7, x: 6, y: 2, req: 3}, {id: 8, x: 8, y: 2, req: 4}, {id: 9, x: 11, y: 2, req: 2}, {id: 10, x: 13, y: 2, req: 4}, {id: 11, x: 1, y: 3, req: 1}, {id: 12, x: 2, y: 4, req: 2}, {id: 13, x: 1, y: 5, req: 4}, {id: 14, x: 4, y: 5, req: 5}, {id: 15, x: 6, y: 5, req: 5}, {id: 16, x: 8, y: 5, req: 4}, {id: 17, x: 10, y: 5, req: 4}, {id: 18, x: 13, y: 5, req: 4}, {id: 19, x: 1, y: 7, req: 4}, {id: 20, x: 4, y: 7, req: 5}, {id: 21, x: 6, y: 7, req: 8}, {id: 22, x: 13, y: 7, req: 5}, {id: 23, x: 0, y: 8, req: 2}, {id: 24, x: 8, y: 9, req: 2}, {id: 25, x: 14, y: 9, req: 3}, {id: 26, x: 0, y: 10, req: 4}, {id: 27, x: 4, y: 11, req: 2}, {id: 28, x: 14, y: 11, req: 1}, {id: 29, x: 1, y: 13, req: 1}, {id: 30, x: 4, y: 13, req: 2}, {id: 31, x: 6, y: 13, req: 4}, {id: 32, x: 0, y: 14, req: 4}, {id: 33, x: 8, y: 14, req: 6}, {id: 34, x: 13, y: 14, req: 4}] },
-      { id: 9, name: "實戰七 (史詩級)", description: "終極挑戰！這是一張超大型地圖，考驗你的耐心與觀察力！", islands: [{id: 1, x: 0, y: 0, req: 2}, {id: 2, x: 2, y: 0, req: 4}, {id: 3, x: 6, y: 0, req: 2}, {id: 4, x: 9, y: 0, req: 1}, {id: 5, x: 11, y: 0, req: 1}, {id: 6, x: 13, y: 0, req: 5}, {id: 7, x: 16, y: 0, req: 6}, {id: 8, x: 21, y: 0, req: 4}, {id: 9, x: 28, y: 0, req: 2}, {id: 10, x: 30, y: 0, req: 1}, {id: 11, x: 1, y: 1, req: 1}, {id: 12, x: 4, y: 1, req: 2}, {id: 13, x: 10, y: 1, req: 2}, {id: 14, x: 12, y: 1, req: 2}, {id: 15, x: 14, y: 1, req: 1}, {id: 16, x: 0, y: 2, req: 1}, {id: 17, x: 6, y: 2, req: 5}, {id: 18, x: 13, y: 2, req: 2}, {id: 19, x: 23, y: 2, req: 2}, {id: 20, x: 25, y: 2, req: 3}, {id: 21, x: 2, y: 3, req: 4}, {id: 22, x: 8, y: 3, req: 4}, {id: 23, x: 11, y: 3, req: 2}, {id: 24, x: 15, y: 3, req: 7}, {id: 25, x: 21, y: 3, req: 4}, {id: 26, x: 30, y: 3, req: 2}, {id: 27, x: 0, y: 4, req: 3}, {id: 28, x: 2, y: 4, req: 3}, {id: 29, x: 12, y: 4, req: 7}, {id: 30, x: 14, y: 4, req: 4}, {id: 31, x: 17, y: 4, req: 1}, {id: 32, x: 20, y: 4, req: 3}, {id: 33, x: 22, y: 4, req: 7}, {id: 34, x: 25, y: 4, req: 2}, {id: 35, x: 16, y: 5, req: 2}, {id: 36, x: 18, y: 5, req: 1}, {id: 37, x: 21, y: 5, req: 3}, {id: 38, x: 24, y: 5, req: 2}, {id: 39, x: 27, y: 5, req: 4}, {id: 40, x: 30, y: 5, req: 2}, {id: 41, x: 9, y: 6, req: 2}, {id: 42, x: 11, y: 6, req: 3}, {id: 43, x: 15, y: 6, req: 3}, {id: 44, x: 17, y: 6, req: 5}, {id: 45, x: 20, y: 6, req: 5}, {id: 46, x: 26, y: 6, req: 1}, {id: 47, x: 11, y: 7, req: 2}, {id: 48, x: 15, y: 7, req: 2}, {id: 49, x: 16, y: 7, req: 2}, {id: 50, x: 19, y: 7, req: 3}, {id: 51, x: 3, y: 8, req: 2}, {id: 52, x: 11, y: 8, req: 2}, {id: 53, x: 15, y: 8, req: 2}, {id: 54, x: 17, y: 8, req: 3}, {id: 55, x: 19, y: 8, req: 2}, {id: 56, x: 21, y: 8, req: 3}, {id: 57, x: 30, y: 8, req: 3}, {id: 58, x: 2, y: 9, req: 3}, {id: 59, x: 23, y: 9, req: 2}, {id: 60, x: 26, y: 9, req: 4}, {id: 61, x: 29, y: 9, req: 3}, {id: 62, x: 12, y: 10, req: 6}, {id: 63, x: 15, y: 10, req: 4}, {id: 64, x: 20, y: 10, req: 2}, {id: 65, x: 22, y: 10, req: 1}, {id: 66, x: 0, y: 11, req: 4}, {id: 67, x: 12, y: 11, req: 5}, {id: 68, x: 16, y: 11, req: 3}, {id: 69, x: 21, y: 11, req: 4}, {id: 70, x: 24, y: 11, req: 1}, {id: 71, x: 28, y: 11, req: 2}, {id: 72, x: 1, y: 12, req: 1}, {id: 73, x: 3, y: 12, req: 3}, {id: 74, x: 5, y: 12, req: 1}, {id: 75, x: 7, y: 12, req: 4}, {id: 76, x: 10, y: 12, req: 4}, {id: 77, x: 13, y: 12, req: 1}, {id: 78, x: 19, y: 12, req: 2}, {id: 79, x: 22, y: 12, req: 6}, {id: 80, x: 25, y: 12, req: 2}, {id: 81, x: 29, y: 12, req: 1}, {id: 82, x: 30, y: 12, req: 5}, {id: 83, x: 5, y: 13, req: 2}, {id: 84, x: 10, y: 13, req: 1}, {id: 85, x: 16, y: 13, req: 3}, {id: 86, x: 20, y: 13, req: 1}, {id: 87, x: 7, y: 14, req: 3}, {id: 88, x: 9, y: 14, req: 2}, {id: 89, x: 18, y: 14, req: 1}, {id: 90, x: 22, y: 14, req: 4}, {id: 91, x: 28, y: 14, req: 4}, {id: 92, x: 0, y: 15, req: 4}, {id: 93, x: 3, y: 15, req: 7}, {id: 94, x: 5, y: 15, req: 5}, {id: 95, x: 14, y: 15, req: 5}, {id: 96, x: 16, y: 15, req: 8}, {id: 97, x: 28, y: 15, req: 6}, {id: 98, x: 29, y: 15, req: 3}, {id: 99, x: 18, y: 16, req: 3}, {id: 100, x: 20, y: 16, req: 1}, {id: 101, x: 30, y: 16, req: 4}, {id: 102, x: 10, y: 17, req: 3}, {id: 103, x: 14, y: 17, req: 2}, {id: 104, x: 20, y: 17, req: 3}, {id: 105, x: 26, y: 17, req: 1}, {id: 106, x: 10, y: 18, req: 1}, {id: 107, x: 21, y: 18, req: 4}, {id: 108, x: 24, y: 18, req: 3}, {id: 109, x: 27, y: 18, req: 1}, {id: 110, x: 0, y: 19, req: 1}, {id: 111, x: 2, y: 19, req: 1}, {id: 112, x: 9, y: 19, req: 2}, {id: 113, x: 12, y: 19, req: 4}, {id: 114, x: 14, y: 19, req: 1}, {id: 115, x: 21, y: 19, req: 1}, {id: 116, x: 26, y: 19, req: 1}, {id: 117, x: 28, y: 19, req: 4}, {id: 118, x: 17, y: 20, req: 3}, {id: 119, x: 20, y: 20, req: 3}, {id: 120, x: 0, y: 21, req: 1}, {id: 121, x: 2, y: 21, req: 2}, {id: 122, x: 5, y: 21, req: 5}, {id: 123, x: 7, y: 21, req: 2}, {id: 124, x: 9, y: 21, req: 1}, {id: 125, x: 17, y: 21, req: 1}, {id: 126, x: 20, y: 21, req: 2}, {id: 127, x: 0, y: 22, req: 3}, {id: 128, x: 5, y: 22, req: 5}, {id: 129, x: 20, y: 22, req: 3}, {id: 130, x: 24, y: 22, req: 3}, {id: 131, x: 27, y: 22, req: 4}, {id: 132, x: 30, y: 22, req: 2}] }
+      { id: 9, name: "實戰七 (史詩級)", description: "終極挑戰！這是一張超大型地圖，考驗你的耐心與觀察力！", islands: [{id: 1, x: 0, y: 0, req: 2}, {id: 2, x: 2, y: 0, req: 4}, {id: 3, x: 6, y: 0, req: 2}, {id: 4, x: 9, y: 0, req: 1}, {id: 5, x: 11, y: 0, req: 1}, {id: 6, x: 13, y: 0, req: 5}, {id: 7, x: 16, y: 0, req: 6}, {id: 8, x: 21, y: 0, req: 4}, {id: 9, x: 28, y: 0, req: 2}, {id: 10, x: 30, y: 0, req: 1}, {id: 11, x: 1, y: 1, req: 1}, {id: 12, x: 4, y: 1, req: 2}, {id: 13, x: 10, y: 1, req: 2}, {id: 14, x: 12, y: 1, req: 2}, {id: 15, x: 14, y: 1, req: 1}, {id: 16, x: 0, y: 2, req: 1}, {id: 17, x: 6, y: 2, req: 5}, {id: 18, x: 13, y: 2, req: 2}, {id: 19, x: 23, y: 2, req: 2}, {id: 20, x: 25, y: 2, req: 3}, {id: 21, x: 2, y: 3, req: 4}, {id: 22, x: 8, y: 3, req: 4}, {id: 23, x: 11, y: 3, req: 2}, {id: 24, x: 15, y: 3, req: 7}, {id: 25, x: 21, y: 3, req: 4}, {id: 26, x: 30, y: 3, req: 2}, {id: 27, x: 0, y: 4, req: 3}, {id: 28, x: 2, y: 4, req: 3}, {id: 29, x: 12, y: 4, req: 7}, {id: 30, x: 14, y: 4, req: 4}, {id: 31, x: 17, y: 4, req: 1}, {id: 32, x: 20, y: 4, req: 3}, {id: 33, x: 22, y: 4, req: 7}, {id: 34, x: 25, y: 4, req: 2}, {id: 35, x: 16, y: 5, req: 2}, {id: 36, x: 18, y: 5, req: 1}, {id: 37, x: 21, y: 5, req: 3}, {id: 38, x: 24, y: 5, req: 2}, {id: 39, x: 27, y: 5, req: 4}, {id: 40, x: 30, y: 5, req: 2}, {id: 41, x: 9, y: 6, req: 2}, {id: 42, x: 11, y: 6, req: 3}, {id: 43, x: 15, y: 6, req: 3}, {id: 44, x: 17, y: 6, req: 5}, {id: 45, x: 20, y: 6, req: 5}, {id: 46, x: 26, y: 6, req: 1}, {id: 47, x: 11, y: 7, req: 2}, {id: 48, x: 15, y: 7, req: 2}, {id: 49, x: 16, y: 7, req: 2}, {id: 50, x: 19, y: 7, req: 3}, {id: 51, x: 3, y: 8, req: 2}, {id: 52, x: 11, y: 8, req: 2}, {id: 53, x: 15, y: 8, req: 2}, {id: 54, x: 17, y: 8, req: 3}, {id: 55, x: 19, y: 8, req: 2}, {id: 56, x: 21, y: 8, req: 3}, {id: 57, x: 30, y: 8, req: 3}, {id: 58, x: 2, y: 9, req: 3}, {id: 59, x: 23, y: 9, req: 2}, {id: 60, x: 26, y: 9, req: 4}, {id: 61, x: 29, y: 9, req: 3}, {id: 62, x: 12, y: 10, req: 6}, {id: 63, x: 15, y: 10, req: 4}, {id: 64, x: 20, y: 10, req: 2}, {id: 65, x: 22, y: 10, req: 1}, {id: 66, x: 0, y: 11, req: 4}, {id: 67, x: 12, y: 11, req: 5}, {id: 68, x: 16, y: 11, req: 3}, {id: 69, x: 21, y: 11, req: 4}, {id: 70, x: 24, y: 11, req: 1}, {id: 71, x: 28, y: 11, req: 2}, {id: 72, x: 1, y: 12, req: 1}, {id: 73, x: 3, y: 12, req: 3}, {id: 74, x: 5, y: 12, req: 1}, {id: 75, x: 7, y: 12, req: 4}, {id: 76, x: 10, y: 12, req: 4}, {id: 77, x: 13, y: 12, req: 1}, {id: 78, x: 19, y: 12, req: 2}, {id: 79, x: 22, y: 12, req: 6}, {id: 80, x: 25, y: 12, req: 2}, {id: 81, x: 29, y: 12, req: 1}, {id: 82, x: 30, y: 12, req: 5}, {id: 83, x: 5, y: 13, req: 2}, {id: 84, x: 10, y: 13, req: 1}, {id: 85, x: 16, y: 13, req: 3}, {id: 86, x: 20, y: 13, req: 1}, {id: 87, x: 7, y: 14, req: 3}, {id: 88, x: 9, y: 14, req: 2}, {id: 89, x: 18, y: 14, req: 1}, {id: 90, x: 22, y: 14, req: 4}, {id: 91, x: 28, y: 14, req: 4}, {id: 92, x: 0, y: 15, req: 4}, {id: 93, x: 3, y: 15, req: 7}, {id: 94, x: 5, y: 15, req: 5}, {id: 95, x: 14, y: 15, req: 5}, {id: 96, x: 16, y: 15, req: 8}, {id: 97, x: 28, y: 15, req: 6}, {id: 98, x: 29, y: 15, req: 3}, {id: 99, x: 18, y: 16, req: 3}, {id: 100, x: 20, y: 16, req: 1}, {id: 101, x: 30, y: 16, req: 4}, {id: 102, x: 10, y: 17, req: 3}, {id: 103, x: 14, y: 17, req: 2}, {id: 104, x: 20, y: 17, req: 3}, {id: 105, x: 26, y: 17, req: 1}, {id: 106, x: 10, y: 18, req: 1}, {id: 107, x: 21, y: 18, req: 4}, {id: 108, x: 24, y: 18, req: 3}, {id: 109, x: 27, y: 18, req: 1}, {id: 110, x: 0, y: 19, req: 1}, {id: 111, x: 2, y: 19, req: 1}, {id: 112, x: 9, y: 19, req: 2}, {id: 113, x: 12, y: 19, req: 4}, {id: 114, x: 14, y: 19, req: 1}, {id: 115, x: 21, y: 19, req: 1}, {id: 116, x: 26, y: 19, req: 1}, {id: 117, x: 28, y: 19, req: 4}, {id: 118, x: 17, y: 20, req: 3}, {id: 119, x: 20, y: 20, req: 3}, {id: 120, x: 0, y: 21, req: 1}, {id: 121, x: 2, y: 21, req: 2}, {id: 122, x: 5, y: 21, req: 5}, {id: 123, x: 7, y: 21, req: 2}, {id: 124, x: 9, y: 21, req: 1}, {id: 125, x: 17, y: 21, req: 1}, {id: 126, x: 20, y: 21, req: 2}, {id: 127, x: 0, y: 22, req: 3}, {id: 128, x: 5, y: 22, req: 5}, {id: 129, x: 20, y: 22, req: 3}, {id: 130, x: 24, y: 22, req: 3}, {id: 131, x: 27, y: 22, req: 4}, {id: 132, x: 30, y: 22, req: 2}] },
+      { id: 10, name: "🎲 隨機關卡 (10x10)", isRandom: true }
     ];
+
+    // 工具函數：隨機生成 10x10 的數橋題目 (保證有解且無重疊/穿越)
+    const generateRandomHashi = () => {
+      const width = 10;
+      const height = 10;
+      let islands = [];
+      let solutionBridges = [];
+      let grid = Array(height).fill(null).map(() => Array(width).fill(null));
+
+      let islandId = 1;
+      let startX = Math.floor(Math.random() * 4) + 3; 
+      let startY = Math.floor(Math.random() * 4) + 3;
+      let firstIsland = { id: islandId++, x: startX, y: startY, req: 0 };
+      islands.push(firstIsland);
+      grid[startY][startX] = { type: 'island', island: firstIsland };
+
+      const dirs = [[0, -1], [0, 1], [-1, 0], [1, 0]]; 
+
+      let attempts = 0;
+      while (islands.length < 25 && attempts < 1000) {
+        attempts++;
+        
+        if (Math.random() < 0.2 && solutionBridges.length > 0) {
+          let b = solutionBridges[Math.floor(Math.random() * solutionBridges.length)];
+          if (b.count < 2) b.count = 2;
+          continue;
+        }
+
+        let source = islands[Math.floor(Math.random() * islands.length)];
+        let dir = dirs[Math.floor(Math.random() * dirs.length)];
+        
+        let d = 1;
+        let hitIsland = null;
+        let max_d = 0;
+        while(true) {
+            let px = source.x + dir[0] * d;
+            let py = source.y + dir[1] * d;
+            if (px < 0 || px >= width || py < 0 || py >= height) break;
+            
+            let cell = grid[py][px];
+            if (cell) {
+                if (cell.type === 'island') {
+                    hitIsland = cell.island;
+                    max_d = d;
+                }
+                break;
+            }
+            max_d = d;
+            d++;
+        }
+
+        if (max_d === 0) continue; 
+
+        let target_d;
+        let targetIslandObj = null;
+
+        if (hitIsland) {
+            target_d = max_d;
+            targetIslandObj = hitIsland;
+            if (max_d > 1 && Math.random() < 0.3) {
+                target_d = Math.floor(Math.random() * (max_d - 1)) + 1;
+                targetIslandObj = null;
+            }
+        } else {
+            target_d = Math.floor(Math.random() * max_d) + 1;
+        }
+
+        let targetX = source.x + dir[0] * target_d;
+        let targetY = source.y + dir[1] * target_d;
+
+        if (!targetIslandObj) {
+            targetIslandObj = { id: islandId++, x: targetX, y: targetY, req: 0 };
+            islands.push(targetIslandObj);
+            grid[targetY][targetX] = { type: 'island', island: targetIslandObj };
+        }
+
+        let existingBridge = solutionBridges.find(b =>
+          (b.from === source.id && b.to === targetIslandObj.id) ||
+          (b.to === source.id && b.from === targetIslandObj.id)
+        );
+
+        if (existingBridge) {
+           if (existingBridge.count < 2) existingBridge.count = 2;
+           continue;
+        }
+
+        let newBridge = {
+          from: source.id,
+          to: targetIslandObj.id,
+          count: Math.floor(Math.random() * 2) + 1,
+          type: dir[0] !== 0 ? 'h' : 'v'
+        };
+        solutionBridges.push(newBridge);
+        
+        for (let i = 1; i < target_d; i++) {
+            let px = source.x + dir[0] * i;
+            let py = source.y + dir[1] * i;
+            grid[py][px] = { type: 'bridge', bridge: newBridge };
+        }
+      }
+
+      solutionBridges.forEach(b => {
+        let fromNode = islands.find(i => i.id === b.from);
+        let toNode = islands.find(i => i.id === b.to);
+        fromNode.req += b.count;
+        toNode.req += b.count;
+      });
+
+      return {
+        id: 10,
+        name: "🎲 隨機關卡 (10x10)",
+        description: "系統即時生成的隨機關卡！保證有解。如果卡住了，可以點擊「顯示解答」。",
+        isRandom: true,
+        islands: islands,
+        solution: solutionBridges
+      };
+    };
 
     // 工具函數：產生空橋樑狀態 (加入 owner 屬性記錄橋是誰畫的)
     const generateEmptyBridges = (level) => {
@@ -101,11 +227,14 @@
     function HashiGame() {
       // ===== 遊戲與介面狀態 =====
       const [currentLevelId, setCurrentLevelId] = useState(1);
+      const [randomLevelData, setRandomLevelData] = useState(null); // 存放隨機生成的關卡資料
       const [bridges, setBridges] = useState([]);
       const [history, setHistory] = useState([]); 
       const [isWon, setIsWon] = useState(false);
       const [message, setMessage] = useState("");
       const [hideVictoryModal, setHideVictoryModal] = useState(false);
+      const [showSolution, setShowSolution] = useState(false); // 控制是否顯示解答
+      
       const [isHeaderCollapsed, setIsHeaderCollapsed] = useState(false);
       const [zoomLevel, setZoomLevel] = useState(1);
 
@@ -115,36 +244,42 @@
       const [isHost, setIsHost] = useState(false);
       const [myPeerId, setMyPeerId] = useState(null);
       
-      // 玩家與名稱管理
       const [showJoinModal, setShowJoinModal] = useState(false);
       const [tempRoomId, setTempRoomId] = useState("");
       const [tempPlayerName, setTempPlayerName] = useState("");
       const [playersList, setPlayersList] = useState([]); 
 
-      // Refs：用來突破 React closure 陷阱，確保取得「絕對最新」的狀態
+      // Refs：用來突破 React closure 陷阱
       const peerRef = useRef(null);
       const clientConnRef = useRef(null);
       const hostConnsRef = useRef({}); 
       const playersRef = useRef([]); 
-      const stateRef = useRef({ bridges: [], levelId: 1, isMultiplayer: false, isHost: false, myPeerId: null });
+      const stateRef = useRef({ bridges: [], levelId: 1, isMultiplayer: false, isHost: false, myPeerId: null, randomLevelData: null, showSolution: false });
 
-      const currentLevel = useMemo(() => LEVELS.find(l => l.id === currentLevelId), [currentLevelId]);
+      const currentLevel = useMemo(() => {
+        const base = LEVELS.find(l => l.id === currentLevelId);
+        if (base && base.isRandom && randomLevelData) return randomLevelData;
+        return base || LEVELS[0];
+      }, [currentLevelId, randomLevelData]);
 
-      // 隨時同步最新狀態到 Ref，讓底層網路事件能存取
+      // 隨時同步最新狀態到 Ref
       useEffect(() => {
-        stateRef.current = { bridges, levelId: currentLevelId, isMultiplayer, isHost, myPeerId };
-      }, [bridges, currentLevelId, isMultiplayer, isHost, myPeerId]);
+        stateRef.current = { bridges, levelId: currentLevelId, isMultiplayer, isHost, myPeerId, randomLevelData, showSolution };
+      }, [bridges, currentLevelId, isMultiplayer, isHost, myPeerId, randomLevelData, showSolution]);
 
       const potentialBridges = useMemo(() => generateEmptyBridges(currentLevel), [currentLevel]);
 
-      // 初始化關卡
+      // 初始化關卡 (靜態)
       useEffect(() => {
-        setBridges(potentialBridges.map(b => ({ ...b, count: 0 })));
-        setHistory([]); 
-        setIsWon(false);
-        setHideVictoryModal(false);
-        setMessage("");
-        setZoomLevel(1);
+        if (!currentLevel.isRandom || randomLevelData) {
+          setBridges(potentialBridges.map(b => ({ ...b, count: 0 })));
+          setHistory([]); 
+          setIsWon(false);
+          setHideVictoryModal(false);
+          setShowSolution(false);
+          setMessage("");
+          setZoomLevel(1);
+        }
       }, [potentialBridges, currentLevelId]);
 
       // ===== 廣播狀態給所有連線者 =====
@@ -179,7 +314,6 @@
         const fullRoomId = 'hashi-game-comic-' + roomCode; 
         const peer = new Peer(fullRoomId);
 
-        // 1. 如果成功佔用 ID，成為「主機 👑」
         peer.on('open', (id) => {
           setIsHost(true);
           setIsMultiplayer(true);
@@ -204,14 +338,17 @@
                  conn.send({ type: 'SYNC_FULL_STATE', data: stateRef.current });
                } 
                else if (msg.type === 'UPDATE_BRIDGE') {
-                 // 【重要修正】接收到玩家畫線，立刻合併最新的 bridges，並更新 stateRef 確保資料一致
                  const nextBridges = stateRef.current.bridges.map(b => 
                     b.id === msg.data.bridgeId ? { ...b, count: msg.data.count, owner: msg.data.owner } : b
                  );
                  setBridges(nextBridges);
                  stateRef.current.bridges = nextBridges; 
-                 
-                 broadcastToAll('UPDATE_BRIDGE', msg.data, conn.peer); // 轉發給其他人
+                 broadcastToAll('UPDATE_BRIDGE', msg.data, conn.peer);
+               }
+               else if (msg.type === 'SHOW_SOLUTION') {
+                 setShowSolution(msg.data);
+                 stateRef.current.showSolution = msg.data;
+                 broadcastToAll('SHOW_SOLUTION', msg.data, conn.peer);
                }
             });
 
@@ -224,7 +361,6 @@
           });
         });
 
-        // 2. 若 ID 已經被佔用，成為「玩家 👤」加入
         peer.on('error', (err) => {
           if (err.type === 'unavailable-id') {
              peer.destroy(); 
@@ -246,21 +382,31 @@
                  if (msg.type === 'SYNC_PLAYERS') {
                    setPlayersList(msg.data);
                  } else if (msg.type === 'SYNC_FULL_STATE') {
+                   if (msg.data.randomLevelData !== undefined) {
+                     setRandomLevelData(msg.data.randomLevelData);
+                     stateRef.current.randomLevelData = msg.data.randomLevelData;
+                   }
                    if (msg.data.bridges) {
                      setBridges(msg.data.bridges);
                      stateRef.current.bridges = msg.data.bridges;
+                   }
+                   if (msg.data.showSolution !== undefined) {
+                     setShowSolution(msg.data.showSolution);
+                     stateRef.current.showSolution = msg.data.showSolution;
                    }
                    if (msg.data.levelId && msg.data.levelId !== stateRef.current.levelId) {
                       setCurrentLevelId(msg.data.levelId);
                       stateRef.current.levelId = msg.data.levelId;
                    }
                  } else if (msg.type === 'UPDATE_BRIDGE') {
-                   // 【重要修正】接收到他人畫線，立刻合併最新的 bridges，並更新 stateRef 確保資料一致
                    const nextBridges = stateRef.current.bridges.map(b => 
                       b.id === msg.data.bridgeId ? { ...b, count: msg.data.count, owner: msg.data.owner } : b
                    );
                    setBridges(nextBridges);
                    stateRef.current.bridges = nextBridges;
+                 } else if (msg.type === 'SHOW_SOLUTION') {
+                   setShowSolution(msg.data);
+                   stateRef.current.showSolution = msg.data;
                  }
                });
 
@@ -278,7 +424,6 @@
         peerRef.current = peer;
       };
 
-      // 計算目前各島橋樑數
       const islandCurrentCounts = useMemo(() => {
         const counts = {};
         currentLevel.islands.forEach(i => counts[i.id] = 0);
@@ -383,11 +528,10 @@
         return false;
       };
 
-      // ===== 【重要修正】橋樑點擊與同步邏輯 (保證不會傳送空資料) =====
+      // 橋樑點擊與同步
       const handleBridgeClick = (bridgeId) => {
         if (isWon) return; 
 
-        // 永遠從 stateRef 取最即時的狀態，防止被非同步吃掉
         const currentBridges = stateRef.current.bridges;
         const target = currentBridges.find(b => b.id === bridgeId);
         if (!target) return;
@@ -402,16 +546,13 @@
         const newCount = (target.count + 1) % 3;
         const newOwner = newCount > 0 ? stateRef.current.myPeerId : null;
 
-        // 立即計算出最新的全場狀態
         const nextBridges = currentBridges.map(b => 
           b.id === bridgeId ? { ...b, count: newCount, owner: newOwner } : b
         );
 
-        // 同步寫入畫面與底層 ref
         setBridges(nextBridges);
         stateRef.current.bridges = nextBridges;
 
-        // 若在多人模式，立刻把封包精準射出去
         if (stateRef.current.isMultiplayer) {
           const syncData = { bridgeId, count: newCount, owner: newOwner };
           if (stateRef.current.isHost) {
@@ -433,25 +574,53 @@
         const empty = generateEmptyBridges(currentLevel);
         setBridges(empty);
         stateRef.current.bridges = empty;
+        setShowSolution(false);
 
         if (isMultiplayer && isHost) {
-          broadcastToAll('SYNC_FULL_STATE', { bridges: empty, levelId: currentLevelId });
+          broadcastToAll('SYNC_FULL_STATE', { bridges: empty, levelId: currentLevelId, showSolution: false });
         } else if (!isMultiplayer) {
           setHistory([]);
+        }
+      };
+
+      // 顯示解答功能
+      const handleShowSolution = () => {
+        setShowSolution(true);
+        stateRef.current.showSolution = true;
+        if (isMultiplayer) {
+          if (isHost) broadcastToAll('SHOW_SOLUTION', true);
+          else if (clientConnRef.current) clientConnRef.current.send({ type: 'SHOW_SOLUTION', data: true });
         }
       };
 
       const handleLevelChange = (newLevelId) => {
         if (isMultiplayer && !isHost) return;
 
+        let newRandomData = null;
+        if (newLevelId === 10) {
+          newRandomData = generateRandomHashi();
+          setRandomLevelData(newRandomData);
+        } else {
+          setRandomLevelData(null);
+        }
+
         setCurrentLevelId(newLevelId);
-        const empty = generateEmptyBridges(LEVELS.find(l => l.id === newLevelId));
+        setShowSolution(false);
+        
+        const activeLevel = newLevelId === 10 ? newRandomData : LEVELS.find(l => l.id === newLevelId);
+        const empty = generateEmptyBridges(activeLevel);
+        
         setBridges(empty);
         stateRef.current.bridges = empty;
         stateRef.current.levelId = newLevelId;
 
         if (isMultiplayer && isHost) {
-          broadcastToAll('SYNC_FULL_STATE', { bridges: empty, levelId: newLevelId });
+          broadcastToAll('SYNC_FULL_STATE', { 
+            bridges: empty, 
+            levelId: newLevelId,
+            randomLevelData: newRandomData,
+            showSolution: false
+          });
         }
       };
 
@@ -469,7 +638,42 @@
       const svgWidthBase = maxGridX * SCALE + PADDING * 2;
       const svgHeightBase = maxGridY * SCALE + PADDING * 2;
 
-      // === 繪製橋樑 ===
+      // 繪製正確解答的紅色虛線
+      const renderSolutionBridge = (bridge) => {
+        const islandsMap = {};
+        currentLevel.islands.forEach(i => islandsMap[i.id] = i);
+        const from = islandsMap[bridge.from];
+        const to = islandsMap[bridge.to];
+        if (!from || !to) return null;
+
+        const x1 = from.x * SCALE + PADDING;
+        const y1 = from.y * SCALE + PADDING;
+        const x2 = to.x * SCALE + PADDING;
+        const y2 = to.y * SCALE + PADDING;
+        const stroke = "#ef4444"; 
+
+        return (
+          <g key={`sol_${bridge.from}_${bridge.to}`} className="pointer-events-none opacity-60">
+            {bridge.count === 1 && (
+              <line x1={x1} y1={y1} x2={x2} y2={y2} stroke={stroke} strokeWidth="8" strokeLinecap="round" className="solution-line" />
+            )}
+            {bridge.count === 2 && bridge.type === 'h' && (
+              <React.Fragment>
+                <line x1={x1} y1={y1 - 6} x2={x2} y2={y2 - 6} stroke={stroke} strokeWidth="6" strokeLinecap="round" className="solution-line" />
+                <line x1={x1} y1={y1 + 6} x2={x2} y2={y2 + 6} stroke={stroke} strokeWidth="6" strokeLinecap="round" className="solution-line" />
+              </React.Fragment>
+            )}
+            {bridge.count === 2 && bridge.type === 'v' && (
+              <React.Fragment>
+                <line x1={x1 - 6} y1={y1} x2={x2 - 6} y2={y2} stroke={stroke} strokeWidth="6" strokeLinecap="round" className="solution-line" />
+                <line x1={x1 + 6} y1={y1} x2={x2 + 6} y2={y2} stroke={stroke} strokeWidth="6" strokeLinecap="round" className="solution-line" />
+              </React.Fragment>
+            )}
+          </g>
+        );
+      }
+
+      // === 繪製玩家畫的橋樑 ===
       const renderBridge = (bridge) => {
         const islandsMap = {};
         currentLevel.islands.forEach(i => islandsMap[i.id] = i);
@@ -483,14 +687,13 @@
         const x2 = to.x * SCALE + PADDING;
         const y2 = to.y * SCALE + PADDING;
 
-        // ===== 決定橋樑的顏色與透明度 =====
-        let lineStroke = "#1e293b"; // 預設(自己畫的): 粗黑色
+        let lineStroke = "#1e293b"; 
         let lineOpacity = 1;
 
         if (stateRef.current.isMultiplayer && bridge.count > 0 && bridge.owner && bridge.owner !== stateRef.current.myPeerId) {
             const ownerObj = playersList.find(p => p.id === bridge.owner);
             lineStroke = ownerObj ? ownerObj.color : "#94a3b8"; 
-            lineOpacity = 0.4; // 別人畫的：顯示為半透明
+            lineOpacity = 0.4; 
         }
 
         return (
@@ -566,7 +769,6 @@
                   ) : (
                     <h1 className="text-lg font-black tracking-tight uppercase px-2">🌉 數橋</h1>
                   )}
-                  {/* 連線狀態徽章 */}
                   {isMultiplayer && (
                     <span className="bg-emerald-500 text-white px-2 py-1 rounded border-2 border-slate-800 font-bold text-xs md:text-sm shadow-[2px_2px_0px_rgba(30,41,59,1)] animate-pulse flex items-center gap-1">
                       {isHost ? '👑 主機' : '👤 玩家'} | 房號: {roomId} 
@@ -651,6 +853,15 @@
                     {isMultiplayer && !isHost && <span className="text-xs font-bold text-slate-700 bg-white/50 px-2 py-1 rounded">(僅房主可切換關卡)</span>}
                     
                     <div className="ml-auto flex gap-2">
+                      {currentLevel.isRandom && !isWon && !showSolution && (
+                        <button 
+                          onClick={handleShowSolution}
+                          className="px-3 md:px-4 py-1.5 bg-yellow-400 text-slate-900 border-2 border-slate-800 rounded-md font-bold text-sm md:text-base shadow-[3px_3px_0px_rgba(30,41,59,1)] hover:bg-yellow-500 active:translate-y-1 active:shadow-none transition-all flex items-center gap-1"
+                        >
+                          💡 放棄並顯示解答
+                        </button>
+                      )}
+
                       {!isMultiplayer && (
                         <button 
                           onClick={handleUndo}
@@ -675,7 +886,7 @@
               )}
             </div>
 
-            {/* 線上玩家名單 (展開狀態且為多人連線時顯示) */}
+            {/* 線上玩家名單 */}
             {isMultiplayer && !isHeaderCollapsed && (
               <div className="px-4 py-2 bg-white border-b-2 border-slate-800 flex flex-wrap gap-2 items-center z-10 shadow-sm shrink-0">
                 <span className="font-black text-slate-800 text-sm">👥 線上玩家 ({playersList.length})：</span>
@@ -718,7 +929,13 @@
                     </defs>
                     <rect width="100%" height="100%" fill="url(#grid)" transform={`translate(${PADDING}, ${PADDING})`} className="opacity-50 pointer-events-none" />
                     
+                    {/* 解答層 (若點擊顯示解答則繪製在玩家橋樑下方) */}
+                    {showSolution && currentLevel.solution && currentLevel.solution.map(renderSolutionBridge)}
+
+                    {/* 玩家橋樑層 */}
                     {bridges.map(renderBridge)}
+                    
+                    {/* 島嶼層 */}
                     {currentLevel.islands.map(renderIsland)}
                   </svg>
                 </div>
