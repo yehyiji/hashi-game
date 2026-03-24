@@ -113,15 +113,15 @@
       const [isMultiplayer, setIsMultiplayer] = useState(false);
       const [roomId, setRoomId] = useState("");
       const [isHost, setIsHost] = useState(false);
-      const [myPeerId, setMyPeerId] = useState(null); // 紀錄自己的連線 ID
+      const [myPeerId, setMyPeerId] = useState(null);
       
       // 玩家與名稱管理
       const [showJoinModal, setShowJoinModal] = useState(false);
       const [tempRoomId, setTempRoomId] = useState("");
       const [tempPlayerName, setTempPlayerName] = useState("");
-      const [playersList, setPlayersList] = useState([]); // [{id, name, isHost, color}]
+      const [playersList, setPlayersList] = useState([]); 
 
-      // Refs：用來在 PeerJS 的非同步回呼中取得「最新」的狀態
+      // Refs：用來突破 React closure 陷阱，確保取得「絕對最新」的狀態
       const peerRef = useRef(null);
       const clientConnRef = useRef(null);
       const hostConnsRef = useRef({}); 
@@ -130,7 +130,7 @@
 
       const currentLevel = useMemo(() => LEVELS.find(l => l.id === currentLevelId), [currentLevelId]);
 
-      // 隨時同步最新狀態到 Ref，讓網路事件能存取到最新變數
+      // 隨時同步最新狀態到 Ref，讓底層網路事件能存取
       useEffect(() => {
         stateRef.current = { bridges, levelId: currentLevelId, isMultiplayer, isHost, myPeerId };
       }, [bridges, currentLevelId, isMultiplayer, isHost, myPeerId]);
@@ -204,10 +204,14 @@
                  conn.send({ type: 'SYNC_FULL_STATE', data: stateRef.current });
                } 
                else if (msg.type === 'UPDATE_BRIDGE') {
-                 // 接收到某位玩家的「單一橋樑更新」 -> 只更新那一根橋，避免互相覆蓋
-                 setBridges(prev => prev.map(b => b.id === msg.data.bridgeId ? { ...b, count: msg.data.count, owner: msg.data.owner } : b));
-                 // 轉發給其他玩家
-                 broadcastToAll('UPDATE_BRIDGE', msg.data, conn.peer);
+                 // 【重要修正】接收到玩家畫線，立刻合併最新的 bridges，並更新 stateRef 確保資料一致
+                 const nextBridges = stateRef.current.bridges.map(b => 
+                    b.id === msg.data.bridgeId ? { ...b, count: msg.data.count, owner: msg.data.owner } : b
+                 );
+                 setBridges(nextBridges);
+                 stateRef.current.bridges = nextBridges; 
+                 
+                 broadcastToAll('UPDATE_BRIDGE', msg.data, conn.peer); // 轉發給其他人
                }
             });
 
@@ -220,7 +224,7 @@
           });
         });
 
-        // 2. 若 ID 已經被佔用，代表房間已存在，成為「玩家 👤」加入
+        // 2. 若 ID 已經被佔用，成為「玩家 👤」加入
         peer.on('error', (err) => {
           if (err.type === 'unavailable-id') {
              peer.destroy(); 
@@ -242,14 +246,21 @@
                  if (msg.type === 'SYNC_PLAYERS') {
                    setPlayersList(msg.data);
                  } else if (msg.type === 'SYNC_FULL_STATE') {
-                   // 房主更換關卡或初始化時，全面覆蓋狀態
-                   if (msg.data.bridges) setBridges(msg.data.bridges);
+                   if (msg.data.bridges) {
+                     setBridges(msg.data.bridges);
+                     stateRef.current.bridges = msg.data.bridges;
+                   }
                    if (msg.data.levelId && msg.data.levelId !== stateRef.current.levelId) {
                       setCurrentLevelId(msg.data.levelId);
+                      stateRef.current.levelId = msg.data.levelId;
                    }
                  } else if (msg.type === 'UPDATE_BRIDGE') {
-                   // 收到他人畫的橋樑，局部更新
-                   setBridges(prev => prev.map(b => b.id === msg.data.bridgeId ? { ...b, count: msg.data.count, owner: msg.data.owner } : b));
+                   // 【重要修正】接收到他人畫線，立刻合併最新的 bridges，並更新 stateRef 確保資料一致
+                   const nextBridges = stateRef.current.bridges.map(b => 
+                      b.id === msg.data.bridgeId ? { ...b, count: msg.data.count, owner: msg.data.owner } : b
+                   );
+                   setBridges(nextBridges);
+                   stateRef.current.bridges = nextBridges;
                  }
                });
 
@@ -331,7 +342,6 @@
         setTimeout(() => setMessage(""), 3000);
       };
 
-      // 防交叉判定邏輯
       const isCrossing = (targetBridge, currentBridges) => {
         const islandsMap = {};
         currentLevel.islands.forEach(i => islandsMap[i.id] = i);
@@ -373,45 +383,43 @@
         return false;
       };
 
-      // ===== 橋樑點擊與同步邏輯 (支援多人同時點擊) =====
+      // ===== 【重要修正】橋樑點擊與同步邏輯 (保證不會傳送空資料) =====
       const handleBridgeClick = (bridgeId) => {
         if (isWon) return; 
 
-        let shouldBroadcast = false;
-        let syncData = null;
+        // 永遠從 stateRef 取最即時的狀態，防止被非同步吃掉
+        const currentBridges = stateRef.current.bridges;
+        const target = currentBridges.find(b => b.id === bridgeId);
+        if (!target) return;
+        
+        if (target.count === 0 && isCrossing(target, currentBridges)) {
+          showMessage("🚫 橋樑不能交叉喔！請先移除阻擋的橋。");
+          return;
+        }
 
-        setBridges(prev => {
-          const target = prev.find(b => b.id === bridgeId);
-          if (!target) return prev;
-          
-          if (target.count === 0 && isCrossing(target, prev)) {
-            showMessage("🚫 橋樑不能交叉喔！請先移除阻擋的橋。");
-            if (!stateRef.current.isMultiplayer) setHistory(past => past.slice(0, -1));
-            return prev;
+        if (!stateRef.current.isMultiplayer) setHistory(past => [...past, currentBridges]);
+
+        const newCount = (target.count + 1) % 3;
+        const newOwner = newCount > 0 ? stateRef.current.myPeerId : null;
+
+        // 立即計算出最新的全場狀態
+        const nextBridges = currentBridges.map(b => 
+          b.id === bridgeId ? { ...b, count: newCount, owner: newOwner } : b
+        );
+
+        // 同步寫入畫面與底層 ref
+        setBridges(nextBridges);
+        stateRef.current.bridges = nextBridges;
+
+        // 若在多人模式，立刻把封包精準射出去
+        if (stateRef.current.isMultiplayer) {
+          const syncData = { bridgeId, count: newCount, owner: newOwner };
+          if (stateRef.current.isHost) {
+            broadcastToAll('UPDATE_BRIDGE', syncData);
+          } else if (clientConnRef.current) {
+            clientConnRef.current.send({ type: 'UPDATE_BRIDGE', data: syncData });
           }
-          
-          if (!stateRef.current.isMultiplayer) setHistory(past => [...past, prev]);
-
-          const newCount = (target.count + 1) % 3;
-          // 若有連線則記錄這條橋是我畫的
-          const newOwner = newCount > 0 ? stateRef.current.myPeerId : null;
-          
-          shouldBroadcast = true;
-          syncData = { bridgeId, count: newCount, owner: newOwner };
-
-          return prev.map(b => b.id === bridgeId ? { ...b, count: newCount, owner: newOwner } : b);
-        });
-
-        // 廣播此條橋的變動，不影響其他正在點擊橋樑的玩家
-        setTimeout(() => {
-          if (shouldBroadcast && stateRef.current.isMultiplayer) {
-            if (stateRef.current.isHost) {
-              broadcastToAll('UPDATE_BRIDGE', syncData);
-            } else if (clientConnRef.current) {
-              clientConnRef.current.send({ type: 'UPDATE_BRIDGE', data: syncData });
-            }
-          }
-        }, 0);
+        }
       };
 
       const handleUndo = () => {
@@ -424,24 +432,26 @@
       const handleReset = () => {
         const empty = generateEmptyBridges(currentLevel);
         setBridges(empty);
-        if (isMultiplayer) {
-          const syncData = { bridges: empty, levelId: currentLevelId };
-          if (isHost) broadcastToAll('SYNC_FULL_STATE', syncData);
-          else if (clientConnRef.current) clientConnRef.current.send({ type: 'ACTION', data: syncData });
-        } else {
+        stateRef.current.bridges = empty;
+
+        if (isMultiplayer && isHost) {
+          broadcastToAll('SYNC_FULL_STATE', { bridges: empty, levelId: currentLevelId });
+        } else if (!isMultiplayer) {
           setHistory([]);
         }
       };
 
       const handleLevelChange = (newLevelId) => {
-        // 多人模式下，只有主機可以換關卡
         if (isMultiplayer && !isHost) return;
 
         setCurrentLevelId(newLevelId);
         const empty = generateEmptyBridges(LEVELS.find(l => l.id === newLevelId));
+        setBridges(empty);
+        stateRef.current.bridges = empty;
+        stateRef.current.levelId = newLevelId;
+
         if (isMultiplayer && isHost) {
-          const syncData = { bridges: empty, levelId: newLevelId };
-          broadcastToAll('SYNC_FULL_STATE', syncData);
+          broadcastToAll('SYNC_FULL_STATE', { bridges: empty, levelId: newLevelId });
         }
       };
 
@@ -478,27 +488,23 @@
         let lineOpacity = 1;
 
         if (stateRef.current.isMultiplayer && bridge.count > 0 && bridge.owner && bridge.owner !== stateRef.current.myPeerId) {
-            // 如果是別人畫的，找出對方的專屬顏色，並給予半透明效果
             const ownerObj = playersList.find(p => p.id === bridge.owner);
             lineStroke = ownerObj ? ownerObj.color : "#94a3b8"; 
-            lineOpacity = 0.5; // 顯示為半透明
+            lineOpacity = 0.4; // 別人畫的：顯示為半透明
         }
 
         return (
           <g key={bridge.id} className="group cursor-pointer" onClick={() => handleBridgeClick(bridge.id)}>
-            {/* 隱形感應區 */}
             {bridge.type === 'h' ? (
               <rect x={Math.min(x1, x2) + ISLAND_RADIUS} y={y1 - 20} width={Math.abs(x1 - x2) - ISLAND_RADIUS * 2} height={40} className="fill-transparent group-hover:fill-yellow-300/30 transition-colors" />
             ) : (
               <rect x={x1 - 20} y={Math.min(y1, y2) + ISLAND_RADIUS} width={40} height={Math.abs(y1 - y2) - ISLAND_RADIUS * 2} className="fill-transparent group-hover:fill-yellow-300/30 transition-colors" />
             )}
             
-            {/* 一座橋 */}
             {bridge.count === 1 && (
               <line x1={x1} y1={y1} x2={x2} y2={y2} stroke={lineStroke} strokeWidth="6" strokeLinecap="round" strokeOpacity={lineOpacity} className="transition-all duration-300" />
             )}
             
-            {/* 兩座橋 */}
             {bridge.count === 2 && bridge.type === 'h' && (
               <React.Fragment>
                 <line x1={x1} y1={y1 - 5} x2={x2} y2={y2 - 5} stroke={lineStroke} strokeWidth="5" strokeLinecap="round" strokeOpacity={lineOpacity} className="transition-all duration-300" />
