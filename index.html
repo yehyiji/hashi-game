@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>數橋 (Hashi) 教學互動遊戲 - 支援多人連線 (PeerJS免設定版)</title>
+  <title>數橋 (Hashi) 教學互動遊戲 - 支援多人連線</title>
   
   <!-- 載入 Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -96,42 +96,44 @@
     };
 
     function HashiGame() {
-      // 遊戲狀態
+      // ===== 遊戲與介面狀態 =====
       const [currentLevelId, setCurrentLevelId] = useState(1);
       const [bridges, setBridges] = useState([]);
       const [history, setHistory] = useState([]); 
       const [isWon, setIsWon] = useState(false);
       const [message, setMessage] = useState("");
       const [hideVictoryModal, setHideVictoryModal] = useState(false);
-      
-      // UI 狀態
       const [isHeaderCollapsed, setIsHeaderCollapsed] = useState(false);
       const [zoomLevel, setZoomLevel] = useState(1);
 
-      // PeerJS 多人連線狀態
+      // ===== PeerJS 多人連線狀態 =====
       const [isMultiplayer, setIsMultiplayer] = useState(false);
       const [roomId, setRoomId] = useState("");
+      const [isHost, setIsHost] = useState(false);
+      
+      // 玩家與名稱管理
       const [showJoinModal, setShowJoinModal] = useState(false);
       const [tempRoomId, setTempRoomId] = useState("");
-      const [isHost, setIsHost] = useState(false);
-      const [playersCount, setPlayersCount] = useState(1);
+      const [tempPlayerName, setTempPlayerName] = useState("");
+      const [playersList, setPlayersList] = useState([]); // [{id, name, isHost}]
 
-      // 用於 PeerJS 解決閉包陷阱的 refs
+      // Refs：用來在 PeerJS 的非同步回呼中取得「最新」的狀態，避免不同步
       const peerRef = useRef(null);
       const clientConnRef = useRef(null);
-      const hostConnsRef = useRef([]);
-      const stateRef = useRef({ bridges: [], levelId: 1 });
+      const hostConnsRef = useRef({}); // { peerId: conn }
+      const playersRef = useRef([]); 
+      const stateRef = useRef({ bridges: [], levelId: 1, isMultiplayer: false, isHost: false });
 
       const currentLevel = useMemo(() => LEVELS.find(l => l.id === currentLevelId), [currentLevelId]);
 
-      // 隨時記錄最新的遊戲狀態，提供給新加入的玩家同步
+      // 隨時同步最新狀態到 Ref，讓連線系統取用
       useEffect(() => {
-        stateRef.current = { bridges, levelId: currentLevelId };
-      }, [bridges, currentLevelId]);
+        stateRef.current = { bridges, levelId: currentLevelId, isMultiplayer, isHost };
+      }, [bridges, currentLevelId, isMultiplayer, isHost]);
 
       const potentialBridges = useMemo(() => generateEmptyBridges(currentLevel), [currentLevel]);
 
-      // 切換關卡時的初始設定
+      // 初始化關卡
       useEffect(() => {
         setBridges(potentialBridges.map(b => ({ ...b, count: 0 })));
         setHistory([]); 
@@ -141,64 +143,87 @@
         setZoomLevel(1);
       }, [potentialBridges, currentLevelId]);
 
-      // 當點對點連線斷開時的清理函式
+      // ===== 廣播狀態給所有連線者 =====
+      const broadcastToAll = (type, data, excludePeerId = null) => {
+        Object.values(hostConnsRef.current).forEach(conn => {
+          if (conn.peer !== excludePeerId) {
+            conn.send({ type, data });
+          }
+        });
+      };
+
+      // ===== 斷開連線 =====
       const disconnectMultiplayer = () => {
         if (peerRef.current) peerRef.current.destroy();
         setIsMultiplayer(false);
         setRoomId("");
         setIsHost(false);
-        setPlayersCount(1);
-        hostConnsRef.current = [];
+        setPlayersList([]);
+        playersRef.current = [];
+        hostConnsRef.current = {};
         clientConnRef.current = null;
       };
 
-      // 啟動 PeerJS 多人連線核心邏輯
-      const startMultiplayer = (roomCode) => {
-        if (!roomCode) return;
-        const fullRoomId = 'hashi-game-v1-' + roomCode; // 加上前綴避免 ID 衝突
+      // ===== 啟動多人連線引擎 =====
+      const startMultiplayer = (roomCode, playerName) => {
+        if (!roomCode || !playerName) {
+          alert("請完整輸入房號與您的暱稱！");
+          return;
+        }
+
+        const fullRoomId = 'hashi-game-comic-' + roomCode; 
         const peer = new Peer(fullRoomId);
 
+        // 如果成功開啟此 ID，代表該房號沒人用，由我成為「主機 👑」
         peer.on('open', (id) => {
-          // 1. 成功佔用該 ID => 成為主機 (Host)
           setIsHost(true);
           setIsMultiplayer(true);
           setRoomId(roomCode);
-          setPlayersCount(1);
+          
+          const initialPlayers = [{ id, name: playerName, isHost: true }];
+          setPlayersList(initialPlayers);
+          playersRef.current = initialPlayers;
           
           peer.on('connection', (conn) => {
-            hostConnsRef.current.push(conn);
-            setPlayersCount(hostConnsRef.current.length + 1);
-
-            conn.on('open', () => {
-              // 有新玩家加入，發送目前的畫面狀態給他
-              conn.send({ type: 'SYNC', data: stateRef.current });
-            });
+            hostConnsRef.current[conn.peer] = conn;
 
             conn.on('data', (msg) => {
-               if (msg.type === 'ACTION') {
-                 // 接收到玩家的操作，更新主機本地畫面
+               if (msg.type === 'JOIN') {
+                 // 有玩家加入，記錄他的暱稱
+                 const newPlayer = { id: conn.peer, name: msg.data.name, isHost: false };
+                 playersRef.current = [...playersRef.current, newPlayer];
+                 setPlayersList([...playersRef.current]);
+                 
+                 // 將最新名單與當前關卡/橋樑狀態發給所有人
+                 broadcastToAll('SYNC_PLAYERS', playersRef.current);
+                 conn.send({ type: 'SYNC_STATE', data: stateRef.current });
+               } 
+               else if (msg.type === 'ACTION') {
+                 // 接收到某位玩家的操作 (包含最新的 bridges 與 levelId)
                  if (msg.data.bridges) setBridges(msg.data.bridges);
                  if (msg.data.levelId && msg.data.levelId !== stateRef.current.levelId) {
                     setCurrentLevelId(msg.data.levelId);
                  }
-                 // 廣播給「其他」所有連線中的玩家
-                 hostConnsRef.current.forEach(c => {
-                   if (c.peer !== conn.peer) c.send({ type: 'SYNC', data: msg.data });
-                 });
+                 // 把這份最新狀態轉發給除了發送者以外的其他所有人
+                 broadcastToAll('SYNC_STATE', msg.data, conn.peer);
                }
             });
 
             conn.on('close', () => {
-               hostConnsRef.current = hostConnsRef.current.filter(c => c.peer !== conn.peer);
-               setPlayersCount(hostConnsRef.current.length + 1);
+               delete hostConnsRef.current[conn.peer];
+               playersRef.current = playersRef.current.filter(p => p.id !== conn.peer);
+               setPlayersList([...playersRef.current]);
+               broadcastToAll('SYNC_PLAYERS', playersRef.current);
             });
           });
         });
 
+        // 若 ID 已經被佔用，代表房間已存在，由我成為「玩家 👤」加入
         peer.on('error', (err) => {
           if (err.type === 'unavailable-id') {
-             // 2. ID 已經被別人佔用 => 房間存在，成為玩家 (Client) 加入
+             peer.destroy(); // 銷毀嘗試當主機的失敗實例
              const clientPeer = new Peer();
+             
              clientPeer.on('open', () => {
                const conn = clientPeer.connect(fullRoomId);
                clientConnRef.current = conn;
@@ -207,10 +232,14 @@
                  setIsHost(false);
                  setIsMultiplayer(true);
                  setRoomId(roomCode);
+                 // 告訴主機我的暱稱
+                 conn.send({ type: 'JOIN', data: { name: playerName } });
                });
 
                conn.on('data', (msg) => {
-                 if (msg.type === 'SYNC') {
+                 if (msg.type === 'SYNC_PLAYERS') {
+                   setPlayersList(msg.data);
+                 } else if (msg.type === 'SYNC_STATE') {
                    if (msg.data.bridges) setBridges(msg.data.bridges);
                    if (msg.data.levelId && msg.data.levelId !== stateRef.current.levelId) {
                       setCurrentLevelId(msg.data.levelId);
@@ -219,7 +248,7 @@
                });
 
                conn.on('close', () => {
-                 alert("與主機斷線！");
+                 alert("與主機斷開連線！即將退回單機模式。");
                  disconnectMultiplayer();
                });
              });
@@ -232,18 +261,7 @@
         peerRef.current = peer;
       };
 
-      // 廣播狀態到其他電腦
-      const broadcastState = (newBridges, newLevelId) => {
-        if (!isMultiplayer) return;
-        const data = { bridges: newBridges, levelId: newLevelId };
-        if (isHost) {
-          hostConnsRef.current.forEach(c => c.send({ type: 'SYNC', data }));
-        } else if (clientConnRef.current) {
-          clientConnRef.current.send({ type: 'ACTION', data });
-        }
-      };
-
-      // 計算各島橋樑數
+      // 計算目前各島橋樑數
       const islandCurrentCounts = useMemo(() => {
         const counts = {};
         currentLevel.islands.forEach(i => counts[i.id] = 0);
@@ -263,6 +281,7 @@
             break;
           }
         }
+
         if (!allCountsMatch) {
           if (isWon) setIsWon(false);
           return;
@@ -306,6 +325,7 @@
         setTimeout(() => setMessage(""), 3000);
       };
 
+      // 防交叉判定邏輯
       const isCrossing = (targetBridge, currentBridges) => {
         const islandsMap = {};
         currentLevel.islands.forEach(i => islandsMap[i.id] = i);
@@ -347,28 +367,37 @@
         return false;
       };
 
+      // ===== 橋樑點擊與同步邏輯 =====
       const handleBridgeClick = (bridgeId) => {
         if (isWon) return; 
 
         let newBridgesState = [];
         setBridges(prev => {
-          if (!isMultiplayer) setHistory(past => [...past, prev]);
+          if (!stateRef.current.isMultiplayer) setHistory(past => [...past, prev]);
           
           const next = prev.map(b => {
             if (b.id !== bridgeId) return b;
             if (b.count === 0 && isCrossing(b, prev)) {
               showMessage("🚫 橋樑不能交叉喔！請先移除阻擋的橋。");
-              if (!isMultiplayer) setHistory(past => past.slice(0, -1));
+              if (!stateRef.current.isMultiplayer) setHistory(past => past.slice(0, -1));
               return b;
             }
             return { ...b, count: (b.count + 1) % 3 };
           });
-          newBridgesState = next;
+          
+          newBridgesState = next; // 提取更新後的狀態供網路發送
           return next;
         });
 
-        // 廣播給其他玩家
-        if (isMultiplayer) broadcastState(newBridgesState, currentLevelId);
+        // 若為多人模式，發送最新動作給全場
+        if (stateRef.current.isMultiplayer) {
+          const syncData = { bridges: newBridgesState, levelId: stateRef.current.levelId };
+          if (stateRef.current.isHost) {
+            broadcastToAll('SYNC_STATE', syncData);
+          } else if (clientConnRef.current) {
+            clientConnRef.current.send({ type: 'ACTION', data: syncData });
+          }
+        }
       };
 
       const handleUndo = () => {
@@ -380,22 +409,25 @@
 
       const handleReset = () => {
         const empty = generateEmptyBridges(currentLevel);
+        setBridges(empty);
         if (isMultiplayer) {
-           setBridges(empty);
-           broadcastState(empty, currentLevelId);
+          const syncData = { bridges: empty, levelId: currentLevelId };
+          if (isHost) broadcastToAll('SYNC_STATE', syncData);
+          else if (clientConnRef.current) clientConnRef.current.send({ type: 'ACTION', data: syncData });
         } else {
-           setBridges(empty);
-           setHistory([]);
+          setHistory([]);
         }
       };
 
       const handleLevelChange = (newLevelId) => {
         setCurrentLevelId(newLevelId);
+        const empty = generateEmptyBridges(LEVELS.find(l => l.id === newLevelId));
         if (isMultiplayer) {
-           const empty = generateEmptyBridges(LEVELS.find(l=>l.id === newLevelId));
-           broadcastState(empty, newLevelId);
+          const syncData = { bridges: empty, levelId: newLevelId };
+          if (isHost) broadcastToAll('SYNC_STATE', syncData);
+          else if (clientConnRef.current) clientConnRef.current.send({ type: 'ACTION', data: syncData });
         }
-      }
+      };
 
       const handleZoomIn = () => setZoomLevel(prev => Math.min(prev + 0.2, 3));
       const handleZoomOut = () => setZoomLevel(prev => Math.max(prev - 0.2, 0.4));
@@ -411,6 +443,7 @@
       const svgWidthBase = maxGridX * SCALE + PADDING * 2;
       const svgHeightBase = maxGridY * SCALE + PADDING * 2;
 
+      // === 繪圖相關 ===
       const renderBridge = (bridge) => {
         const islandsMap = {};
         currentLevel.islands.forEach(i => islandsMap[i.id] = i);
@@ -485,20 +518,20 @@
           
           <div className="w-full max-w-[1200px] bg-[#fffaf0] rounded-xl border-4 border-slate-800 shadow-[8px_8px_0px_rgba(30,41,59,1)] overflow-hidden flex flex-col h-[95vh] relative">
             
+            {/* 標頭與控制區 */}
             <div className={`bg-[#ffcc00] border-b-4 border-slate-800 text-slate-900 shrink-0 z-20 transition-all duration-300 ease-in-out ${isHeaderCollapsed ? 'p-2 flex flex-wrap gap-2 items-center justify-between' : 'p-3 md:p-5 flex flex-col gap-3'}`}>
               
               <div className="flex justify-between items-center w-full">
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 flex-wrap">
                   {!isHeaderCollapsed ? (
                     <h1 className="text-2xl md:text-3xl font-black tracking-tight uppercase">🌉 Hashi 數橋挑戰</h1>
                   ) : (
                     <h1 className="text-lg font-black tracking-tight uppercase px-2">🌉 數橋</h1>
                   )}
-                  {/* 連線狀態徽章 (PeerJS 版) */}
+                  {/* 連線狀態徽章 */}
                   {isMultiplayer && (
                     <span className="bg-emerald-500 text-white px-2 py-1 rounded border-2 border-slate-800 font-bold text-xs md:text-sm shadow-[2px_2px_0px_rgba(30,41,59,1)] animate-pulse flex items-center gap-1">
-                      {isHost ? '👑' : '👤'} 房號: {roomId} 
-                      {isHost && <span className="ml-1 px-1 bg-white/30 rounded text-xs">{playersCount}人</span>}
+                      {isHost ? '👑 主機' : '👤 玩家'} | 房號: {roomId} 
                     </span>
                   )}
                 </div>
@@ -538,11 +571,11 @@
                     <div className="flex-1">
                       <h3 className="text-base md:text-lg font-black mb-1 md:mb-2 border-b-4 border-[#ffcc00] inline-block pb-1">📜 遊戲四大規則</h3>
                       <ol className="list-decimal list-outside ml-5 space-y-1 md:space-y-1.5 text-xs md:text-sm leading-relaxed font-bold">
-                        <li>每個圓圈是一座「島」，數字代表該島需要的<span className="text-blue-600 font-black">對外橋樑總數</span>。</li>
-                        <li>橋樑必須是<span className="text-blue-600 font-black">垂直或水平</span>方向（不可以搭斜對角或波浪狀）。</li>
+                        <li>每個圓圈是一座「島」，數字代表需要<span className="text-blue-600 font-black">幾座橋樑</span>。</li>
+                        <li>橋樑必須是<span className="text-blue-600 font-black">垂直或水平</span>方向。</li>
                         <li>橋樑之間<span className="text-red-500 font-black">絕對不能交叉或重疊</span>。</li>
                         <li>兩座島之間<span className="text-blue-600 font-black">最多只能架設 2 座橋</span>。</li>
-                        <li>完成時，每個島都有辦法<span className="text-emerald-600 font-black">通往其他任何一個島</span>（全部連通）。</li>
+                        <li>完成時，每個島都要能<span className="text-emerald-600 font-black">通往其他任何島</span>。</li>
                       </ol>
                     </div>
                     <div className="md:w-1/3 bg-[#ffcc00]/20 p-3 rounded-lg border-2 border-slate-800 flex flex-col justify-center relative">
@@ -550,7 +583,7 @@
                       <p className="text-slate-700 text-xs md:text-sm font-bold leading-relaxed">{currentLevel.description}</p>
                       {isMultiplayer && (
                         <div className="mt-2 text-xs text-emerald-700 font-bold bg-emerald-100 p-1 rounded border border-emerald-300">
-                          多人模式中，已停用「上一步」以防止同步衝突。
+                          已停用「上一步」功能以防同學畫面互搶。
                         </div>
                       )}
                     </div>
@@ -590,6 +623,19 @@
               )}
             </div>
 
+            {/* 線上玩家名單 (展開狀態且為多人連線時顯示) */}
+            {isMultiplayer && !isHeaderCollapsed && (
+              <div className="px-4 py-2 bg-white border-b-2 border-slate-800 flex flex-wrap gap-2 items-center z-10 shadow-sm shrink-0">
+                <span className="font-black text-slate-800 text-sm">👥 房內同學 ({playersList.length})：</span>
+                {playersList.map((p, idx) => (
+                  <span key={idx} className={`px-2 py-0.5 rounded border-2 border-slate-800 text-xs font-bold ${p.isHost ? 'bg-yellow-200 text-yellow-800' : 'bg-slate-200 text-slate-700'}`}>
+                    {p.name} {p.isHost && '👑'}
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {/* 提示訊息區 */}
             {!isHeaderCollapsed && (
               <div className="h-8 shrink-0 flex items-center justify-center bg-slate-800 text-white border-b-4 border-slate-800 z-10 font-bold tracking-wide">
                 {message && <span className="text-yellow-300 animate-pulse">{message}</span>}
@@ -654,16 +700,32 @@
             {showJoinModal && (
               <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
                 <div className="bg-white border-4 border-slate-800 rounded-2xl p-6 shadow-[10px_10px_0px_rgba(0,0,0,1)] w-full max-w-sm animate-fadeIn">
-                  <h2 className="text-2xl font-black text-slate-800 mb-2 border-b-4 border-[#ffcc00] inline-block pb-1">🌐 多人連線 (免註冊)</h2>
-                  <p className="text-sm font-bold text-slate-600 mb-4">這是一個免註冊的點對點連線！輸入一組任意房號（例如: 8888）。</p>
-                  <p className="text-xs font-bold text-emerald-600 mb-4">💡 第一個輸入的人會自動成為「主機 👑」，其他人則會成為「玩家 👤」加入該主機。</p>
-                  <input 
-                    type="text" 
-                    placeholder="請輸入房號" 
-                    value={tempRoomId}
-                    onChange={(e) => setTempRoomId(e.target.value)}
-                    className="w-full border-2 border-slate-800 rounded-lg p-3 font-bold text-lg mb-4 shadow-[3px_3px_0px_rgba(30,41,59,1)] outline-none focus:bg-yellow-50"
-                  />
+                  <h2 className="text-2xl font-black text-slate-800 mb-2 border-b-4 border-[#ffcc00] inline-block pb-1">🌐 多人連線</h2>
+                  <p className="text-sm font-bold text-slate-600 mb-4">第一個輸入房號的人將成為「主機👑」，其他人輸入相同房號即可加入房間。</p>
+                  
+                  <div className="flex flex-col gap-3 mb-5">
+                    <div>
+                      <label className="block text-slate-800 font-bold text-sm mb-1">您的暱稱：</label>
+                      <input 
+                        type="text" 
+                        placeholder="例如：王小明" 
+                        value={tempPlayerName}
+                        onChange={(e) => setTempPlayerName(e.target.value)}
+                        className="w-full border-2 border-slate-800 rounded-lg p-2 font-bold text-base shadow-[3px_3px_0px_rgba(30,41,59,1)] outline-none focus:bg-yellow-50"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-slate-800 font-bold text-sm mb-1">欲建立/加入的房號：</label>
+                      <input 
+                        type="text" 
+                        placeholder="例如：8888" 
+                        value={tempRoomId}
+                        onChange={(e) => setTempRoomId(e.target.value)}
+                        className="w-full border-2 border-slate-800 rounded-lg p-2 font-bold text-base shadow-[3px_3px_0px_rgba(30,41,59,1)] outline-none focus:bg-yellow-50"
+                      />
+                    </div>
+                  </div>
+
                   <div className="flex gap-3">
                     <button 
                       onClick={() => setShowJoinModal(false)}
@@ -673,10 +735,8 @@
                     </button>
                     <button 
                       onClick={() => {
-                        if (tempRoomId.trim()) {
-                          startMultiplayer(tempRoomId.trim());
-                          setShowJoinModal(false);
-                        }
+                        startMultiplayer(tempRoomId.trim(), tempPlayerName.trim());
+                        setShowJoinModal(false);
                       }}
                       className="flex-1 py-2 bg-emerald-500 text-white border-2 border-slate-800 rounded-lg font-bold shadow-[3px_3px_0px_rgba(30,41,59,1)] hover:bg-emerald-600"
                     >
