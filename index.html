@@ -1,633 +1,696 @@
-<!DOCTYPE html>
-<html lang="zh-TW">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>數橋 (Hashi) 互動挑戰</title>
+import React, { useState, useEffect, useMemo } from 'react';
+
+// === 關卡資料 ===
+const LEVELS = [
+  {
+    id: 1,
+    name: "範例一 (暖身)",
+    description: "這是講義上的第一個範例。試著找出不交叉的正確連法！",
+    islands: [
+      { id: 1, x: 0, y: 0, req: 4 }, { id: 2, x: 2, y: 0, req: 5 }, { id: 3, x: 6, y: 0, req: 2 },
+      { id: 4, x: 3, y: 1, req: 2 }, { id: 5, x: 5, y: 1, req: 3 },
+      { id: 6, x: 0, y: 2, req: 4 },
+      { id: 7, x: 2, y: 3, req: 4 }, { id: 8, x: 4, y: 3, req: 2 },
+      { id: 9, x: 0, y: 4, req: 5 }, { id: 10, x: 5, y: 4, req: 2 },
+      { id: 11, x: 2, y: 5, req: 2 }, { id: 12, x: 6, y: 5, req: 3 },
+      { id: 13, x: 0, y: 6, req: 3 }, { id: 14, x: 4, y: 6, req: 1 }
+    ]
+  },
+  {
+    id: 2,
+    name: "範例二 (連通)",
+    description: "講義的第二個範例，所有的島嶼必須『全部連通』喔！",
+    islands: [
+      { id: 1, x: 0, y: 0, req: 3 }, { id: 2, x: 4, y: 0, req: 4 }, { id: 3, x: 6, y: 0, req: 3 },
+      { id: 4, x: 2, y: 2, req: 1 }, { id: 5, x: 4, y: 2, req: 3 },
+      { id: 6, x: 0, y: 4, req: 4 }, { id: 7, x: 6, y: 4, req: 4 },
+      { id: 8, x: 0, y: 6, req: 1 }, { id: 9, x: 3, y: 6, req: 1 }, { id: 10, x: 6, y: 6, req: 2 }
+    ]
+  },
+  {
+    id: 3,
+    name: "實戰一 (7x7)",
+    description: "滿滿的島嶼！從角落或邊緣最大的數字開始挑戰吧。",
+    islands: [
+      {id: 1, x: 1, y: 0, req: 1}, {id: 2, x: 3, y: 0, req: 3}, {id: 3, x: 6, y: 0, req: 3},
+      {id: 4, x: 0, y: 1, req: 4}, {id: 5, x: 4, y: 1, req: 2},
+      {id: 6, x: 6, y: 2, req: 2},
+      {id: 7, x: 0, y: 3, req: 4}, {id: 8, x: 3, y: 3, req: 5}, {id: 9, x: 5, y: 3, req: 3},
+      {id: 10, x: 1, y: 4, req: 2},
+      {id: 11, x: 5, y: 5, req: 2},
+      {id: 12, x: 1, y: 6, req: 4}, {id: 13, x: 3, y: 6, req: 6}, {id: 14, x: 6, y: 6, req: 3}
+    ]
+  },
+  {
+    id: 4,
+    name: "實戰二 (7x7)",
+    description: "注意中心的 6 和 5，它們需要連出很多座橋！",
+    islands: [
+      {id: 1, x: 0, y: 0, req: 1}, {id: 2, x: 3, y: 0, req: 2}, {id: 3, x: 6, y: 0, req: 4},
+      {id: 4, x: 0, y: 2, req: 3}, {id: 5, x: 2, y: 2, req: 5}, {id: 6, x: 4, y: 2, req: 2},
+      {id: 7, x: 2, y: 4, req: 6}, {id: 8, x: 6, y: 4, req: 4},
+      {id: 9, x: 0, y: 5, req: 1},
+      {id: 10, x: 2, y: 6, req: 4}, {id: 11, x: 6, y: 6, req: 2}
+    ]
+  },
+  {
+    id: 5,
+    name: "實戰三 (7x7)",
+    description: "右上角有一個有趣的十字形狀，仔細推敲看看。",
+    islands: [
+      {id: 1, x: 0, y: 0, req: 3}, {id: 2, x: 2, y: 0, req: 4}, {id: 3, x: 5, y: 0, req: 3},
+      {id: 4, x: 4, y: 1, req: 1}, {id: 5, x: 6, y: 1, req: 2},
+      {id: 6, x: 0, y: 2, req: 3}, {id: 7, x: 2, y: 2, req: 2}, {id: 8, x: 5, y: 2, req: 3},
+      {id: 9, x: 2, y: 4, req: 4}, {id: 10, x: 4, y: 4, req: 2},
+      {id: 11, x: 5, y: 5, req: 1},
+      {id: 12, x: 0, y: 6, req: 2}, {id: 13, x: 2, y: 6, req: 4}, {id: 14, x: 6, y: 6, req: 4}
+    ]
+  },
+  {
+    id: 6,
+    name: "實戰四 (7x7)",
+    description: "看似分散，但其實只有唯一的連通方式喔！",
+    islands: [
+      {id: 1, x: 0, y: 0, req: 3}, {id: 2, x: 3, y: 0, req: 3}, {id: 3, x: 6, y: 0, req: 3},
+      {id: 4, x: 1, y: 1, req: 2},
+      {id: 5, x: 4, y: 2, req: 3}, {id: 6, x: 6, y: 2, req: 4},
+      {id: 7, x: 0, y: 5, req: 2}, {id: 8, x: 4, y: 5, req: 2},
+      {id: 9, x: 1, y: 6, req: 3}, {id: 10, x: 3, y: 6, req: 4}, {id: 11, x: 6, y: 6, req: 3}
+    ]
+  },
+  {
+    id: 7,
+    name: "實戰五 (7x7)",
+    description: "完美對稱的謎題，保持冷靜一層層解開吧！",
+    islands: [
+      {id: 1, x: 0, y: 0, req: 2}, {id: 2, x: 3, y: 0, req: 4}, {id: 3, x: 6, y: 0, req: 3},
+      {id: 4, x: 1, y: 1, req: 2}, {id: 5, x: 5, y: 1, req: 2},
+      {id: 6, x: 6, y: 2, req: 1},
+      {id: 7, x: 1, y: 3, req: 5}, {id: 8, x: 3, y: 3, req: 4}, {id: 9, x: 5, y: 3, req: 3},
+      {id: 10, x: 0, y: 4, req: 1},
+      {id: 11, x: 3, y: 5, req: 1},
+      {id: 12, x: 1, y: 6, req: 2}, {id: 13, x: 5, y: 6, req: 2}
+    ]
+  },
+  {
+    id: 8,
+    name: "實戰六 (15x15)",
+    description: "已完美對齊矩陣！15x15 的高難度迷宮。",
+    islands: [
+      {id: 1, x: 2, y: 0, req: 3}, {id: 2, x: 10, y: 0, req: 3}, {id: 3, x: 14, y: 0, req: 3},
+      {id: 4, x: 4, y: 1, req: 4}, {id: 5, x: 7, y: 1, req: 4}, {id: 6, x: 9, y: 1, req: 2},
+      {id: 7, x: 6, y: 2, req: 3}, {id: 8, x: 8, y: 2, req: 4}, {id: 9, x: 11, y: 2, req: 2}, {id: 10, x: 13, y: 2, req: 4},
+      {id: 11, x: 1, y: 3, req: 1},
+      {id: 12, x: 2, y: 4, req: 2},
+      {id: 13, x: 1, y: 5, req: 4}, {id: 14, x: 4, y: 5, req: 5}, {id: 15, x: 6, y: 5, req: 5}, {id: 16, x: 8, y: 5, req: 4}, {id: 17, x: 10, y: 5, req: 4}, {id: 18, x: 13, y: 5, req: 4},
+      {id: 19, x: 1, y: 7, req: 4}, {id: 20, x: 4, y: 7, req: 5}, {id: 21, x: 6, y: 7, req: 8}, {id: 22, x: 13, y: 7, req: 5},
+      {id: 23, x: 0, y: 8, req: 2},
+      {id: 24, x: 8, y: 9, req: 2}, {id: 25, x: 14, y: 9, req: 3},
+      {id: 26, x: 0, y: 10, req: 4},
+      {id: 27, x: 4, y: 11, req: 2}, {id: 28, x: 14, y: 11, req: 1},
+      {id: 29, x: 1, y: 13, req: 1}, {id: 30, x: 4, y: 13, req: 2}, {id: 31, x: 6, y: 13, req: 4},
+      {id: 32, x: 0, y: 14, req: 4}, {id: 33, x: 8, y: 14, req: 6}, {id: 34, x: 13, y: 14, req: 4}
+    ]
+  },
+  {
+    id: 9,
+    name: "實戰七 (史詩級)",
+    description: "終極挑戰！這是一張超大型地圖，考驗你的耐心與觀察力！",
+    islands: [
+      {id: 1, x: 0, y: 0, req: 2}, {id: 2, x: 2, y: 0, req: 4}, {id: 3, x: 6, y: 0, req: 2}, {id: 4, x: 9, y: 0, req: 1}, {id: 5, x: 11, y: 0, req: 1}, {id: 6, x: 13, y: 0, req: 5}, {id: 7, x: 16, y: 0, req: 6}, {id: 8, x: 21, y: 0, req: 4}, {id: 9, x: 28, y: 0, req: 2}, {id: 10, x: 30, y: 0, req: 1},
+      {id: 11, x: 1, y: 1, req: 1}, {id: 12, x: 4, y: 1, req: 2}, {id: 13, x: 10, y: 1, req: 2}, {id: 14, x: 12, y: 1, req: 2}, {id: 15, x: 14, y: 1, req: 1},
+      {id: 16, x: 0, y: 2, req: 1}, {id: 17, x: 6, y: 2, req: 5}, {id: 18, x: 13, y: 2, req: 2}, {id: 19, x: 23, y: 2, req: 2}, {id: 20, x: 25, y: 2, req: 3},
+      {id: 21, x: 2, y: 3, req: 4}, {id: 22, x: 8, y: 3, req: 4}, {id: 23, x: 11, y: 3, req: 2}, {id: 24, x: 15, y: 3, req: 7}, {id: 25, x: 21, y: 3, req: 4}, {id: 26, x: 30, y: 3, req: 2},
+      {id: 27, x: 0, y: 4, req: 3}, {id: 28, x: 2, y: 4, req: 3}, {id: 29, x: 12, y: 4, req: 7}, {id: 30, x: 14, y: 4, req: 4}, {id: 31, x: 17, y: 4, req: 1}, {id: 32, x: 20, y: 4, req: 3}, {id: 33, x: 22, y: 4, req: 7}, {id: 34, x: 25, y: 4, req: 2},
+      {id: 35, x: 16, y: 5, req: 2}, {id: 36, x: 18, y: 5, req: 1}, {id: 37, x: 21, y: 5, req: 3}, {id: 38, x: 24, y: 5, req: 2}, {id: 39, x: 27, y: 5, req: 4}, {id: 40, x: 30, y: 5, req: 2},
+      {id: 41, x: 9, y: 6, req: 2}, {id: 42, x: 11, y: 6, req: 3}, {id: 43, x: 15, y: 6, req: 3}, {id: 44, x: 17, y: 6, req: 5}, {id: 45, x: 20, y: 6, req: 5}, {id: 46, x: 26, y: 6, req: 1},
+      {id: 47, x: 11, y: 7, req: 2}, {id: 48, x: 15, y: 7, req: 2}, {id: 49, x: 16, y: 7, req: 2}, {id: 50, x: 19, y: 7, req: 3},
+      {id: 51, x: 3, y: 8, req: 2}, {id: 52, x: 11, y: 8, req: 2}, {id: 53, x: 15, y: 8, req: 2}, {id: 54, x: 17, y: 8, req: 3}, {id: 55, x: 19, y: 8, req: 2}, {id: 56, x: 21, y: 8, req: 3}, {id: 57, x: 30, y: 8, req: 3},
+      {id: 58, x: 2, y: 9, req: 3}, {id: 59, x: 23, y: 9, req: 2}, {id: 60, x: 26, y: 9, req: 4}, {id: 61, x: 29, y: 9, req: 3},
+      {id: 62, x: 12, y: 10, req: 6}, {id: 63, x: 15, y: 10, req: 4}, {id: 64, x: 20, y: 10, req: 2}, {id: 65, x: 22, y: 10, req: 1},
+      {id: 66, x: 0, y: 11, req: 4}, {id: 67, x: 12, y: 11, req: 5}, {id: 68, x: 16, y: 11, req: 3}, {id: 69, x: 21, y: 11, req: 4}, {id: 70, x: 24, y: 11, req: 1}, {id: 71, x: 28, y: 11, req: 2},
+      {id: 72, x: 1, y: 12, req: 1}, {id: 73, x: 3, y: 12, req: 3}, {id: 74, x: 5, y: 12, req: 1}, {id: 75, x: 7, y: 12, req: 4}, {id: 76, x: 10, y: 12, req: 4}, {id: 77, x: 13, y: 12, req: 1}, {id: 78, x: 19, y: 12, req: 2}, {id: 79, x: 22, y: 12, req: 6}, {id: 80, x: 25, y: 12, req: 2}, {id: 81, x: 29, y: 12, req: 1}, {id: 82, x: 30, y: 12, req: 5},
+      {id: 83, x: 5, y: 13, req: 2}, {id: 84, x: 10, y: 13, req: 1}, {id: 85, x: 16, y: 13, req: 3}, {id: 86, x: 20, y: 13, req: 1},
+      {id: 87, x: 7, y: 14, req: 3}, {id: 88, x: 9, y: 14, req: 2}, {id: 89, x: 18, y: 14, req: 1}, {id: 90, x: 22, y: 14, req: 4}, {id: 91, x: 28, y: 14, req: 4},
+      {id: 92, x: 0, y: 15, req: 4}, {id: 93, x: 3, y: 15, req: 7}, {id: 94, x: 5, y: 15, req: 5}, {id: 95, x: 14, y: 15, req: 5}, {id: 96, x: 16, y: 15, req: 8}, {id: 97, x: 28, y: 15, req: 6}, {id: 98, x: 29, y: 15, req: 3},
+      {id: 99, x: 18, y: 16, req: 3}, {id: 100, x: 20, y: 16, req: 1}, {id: 101, x: 30, y: 16, req: 4},
+      {id: 102, x: 10, y: 17, req: 3}, {id: 103, x: 14, y: 17, req: 2}, {id: 104, x: 20, y: 17, req: 3}, {id: 105, x: 26, y: 17, req: 1},
+      {id: 106, x: 10, y: 18, req: 1}, {id: 107, x: 21, y: 18, req: 4}, {id: 108, x: 24, y: 18, req: 3}, {id: 109, x: 27, y: 18, req: 1},
+      {id: 110, x: 0, y: 19, req: 1}, {id: 111, x: 2, y: 19, req: 1}, {id: 112, x: 9, y: 19, req: 2}, {id: 113, x: 12, y: 19, req: 4}, {id: 114, x: 14, y: 19, req: 1}, {id: 115, x: 21, y: 19, req: 1}, {id: 116, x: 26, y: 19, req: 1}, {id: 117, x: 28, y: 19, req: 4},
+      {id: 118, x: 17, y: 20, req: 3}, {id: 119, x: 20, y: 20, req: 3},
+      {id: 120, x: 0, y: 21, req: 1}, {id: 121, x: 2, y: 21, req: 2}, {id: 122, x: 5, y: 21, req: 5}, {id: 123, x: 7, y: 21, req: 2}, {id: 124, x: 9, y: 21, req: 1}, {id: 125, x: 17, y: 21, req: 1}, {id: 126, x: 20, y: 21, req: 2},
+      {id: 127, x: 0, y: 22, req: 3}, {id: 128, x: 5, y: 22, req: 5}, {id: 129, x: 20, y: 22, req: 3}, {id: 130, x: 24, y: 22, req: 3}, {id: 131, x: 27, y: 22, req: 4}, {id: 132, x: 30, y: 22, req: 2}
+    ]
+  }
+];
+
+export default function HashiGame() {
+  const [currentLevelId, setCurrentLevelId] = useState(1);
+  const [bridges, setBridges] = useState([]);
+  const [history, setHistory] = useState([]); 
+  const [isWon, setIsWon] = useState(false);
+  const [message, setMessage] = useState("");
+  const [hideVictoryModal, setHideVictoryModal] = useState(false);
   
-  <!-- 載入 React, ReactDOM 與 Babel -->
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  
-  <!-- 載入 Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
+  // 面板縮合狀態
+  const [isHeaderCollapsed, setIsHeaderCollapsed] = useState(false);
+  // 畫面縮放比例 (為電腦版使用者設計)
+  const [zoomLevel, setZoomLevel] = useState(1);
 
-  <style>
-    /* 隱藏預設捲軸的簡易 CSS，讓介面更乾淨 */
-    .custom-scrollbar::-webkit-scrollbar { width: 8px; height: 8px; }
-    .custom-scrollbar::-webkit-scrollbar-track { background: rgba(0,0,0,0.05); border-radius: 4px; }
-    .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.2); border-radius: 4px; }
-    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.3); }
-    body { overscroll-behavior-y: none; } /* 防止手機下拉重新整理 */
-  </style>
-</head>
-<body class="bg-slate-50">
-  <div id="root"></div>
+  const currentLevel = useMemo(() => LEVELS.find(l => l.id === currentLevelId), [currentLevelId]);
 
-  <script type="text/babel">
-    const { useState, useEffect, useMemo, useRef } = React;
+  const potentialBridges = useMemo(() => {
+    let pb = [];
+    let bridgeId = 1;
+    const islands = currentLevel.islands;
 
-    // === 關卡資料 ===
-    const LEVELS = [
-      {
-        id: 1, name: "範例一", description: "這是講義上的第一個範例。試著找出不交叉的正確連法！",
-        islands: [
-          { id: 1, x: 0, y: 0, req: 4 }, { id: 2, x: 2, y: 0, req: 5 }, { id: 3, x: 6, y: 0, req: 2 },
-          { id: 4, x: 3, y: 1, req: 2 }, { id: 5, x: 5, y: 1, req: 3 },
-          { id: 6, x: 0, y: 2, req: 4 },
-          { id: 7, x: 2, y: 3, req: 4 }, { id: 8, x: 4, y: 3, req: 2 },
-          { id: 9, x: 0, y: 4, req: 5 }, { id: 10, x: 5, y: 4, req: 2 },
-          { id: 11, x: 2, y: 5, req: 2 }, { id: 12, x: 6, y: 5, req: 3 },
-          { id: 13, x: 0, y: 6, req: 3 }, { id: 14, x: 4, y: 6, req: 1 }
-        ]
-      },
-      {
-        id: 2, name: "範例二", description: "講義的第二個範例，所有的島嶼必須『全部連通』喔！",
-        islands: [
-          { id: 1, x: 0, y: 0, req: 3 }, { id: 2, x: 4, y: 0, req: 4 }, { id: 3, x: 6, y: 0, req: 3 },
-          { id: 4, x: 2, y: 2, req: 1 }, { id: 5, x: 4, y: 2, req: 3 },
-          { id: 6, x: 0, y: 4, req: 4 }, { id: 7, x: 6, y: 4, req: 4 },
-          { id: 8, x: 0, y: 6, req: 1 }, { id: 9, x: 3, y: 6, req: 1 }, { id: 10, x: 6, y: 6, req: 2 }
-        ]
-      },
-      {
-        id: 3, name: "實戰一", description: "滿滿的島嶼！從角落或邊緣最大的數字開始挑戰吧。",
-        islands: [
-          {id: 1, x: 1, y: 0, req: 1}, {id: 2, x: 3, y: 0, req: 3}, {id: 3, x: 6, y: 0, req: 3},
-          {id: 4, x: 0, y: 1, req: 4}, {id: 5, x: 4, y: 1, req: 2},
-          {id: 6, x: 6, y: 2, req: 2},
-          {id: 7, x: 0, y: 3, req: 4}, {id: 8, x: 3, y: 3, req: 5}, {id: 9, x: 5, y: 3, req: 3},
-          {id: 10, x: 1, y: 4, req: 2},
-          {id: 11, x: 5, y: 5, req: 2},
-          {id: 12, x: 1, y: 6, req: 4}, {id: 13, x: 3, y: 6, req: 6}, {id: 14, x: 6, y: 6, req: 3}
-        ]
-      },
-      {
-        id: 4, name: "實戰二", description: "注意中心的 6 和 5，它們需要連出很多座橋！",
-        islands: [
-          {id: 1, x: 0, y: 0, req: 1}, {id: 2, x: 3, y: 0, req: 2}, {id: 3, x: 6, y: 0, req: 4},
-          {id: 4, x: 0, y: 2, req: 3}, {id: 5, x: 2, y: 2, req: 5}, {id: 6, x: 4, y: 2, req: 2},
-          {id: 7, x: 2, y: 4, req: 6}, {id: 8, x: 6, y: 4, req: 4},
-          {id: 9, x: 0, y: 5, req: 1},
-          {id: 10, x: 2, y: 6, req: 4}, {id: 11, x: 6, y: 6, req: 2}
-        ]
-      },
-      {
-        id: 5, name: "實戰三", description: "右上角有一個有趣的十字形狀，仔細推敲看看。",
-        islands: [
-          {id: 1, x: 0, y: 0, req: 3}, {id: 2, x: 2, y: 0, req: 4}, {id: 3, x: 5, y: 0, req: 3},
-          {id: 4, x: 4, y: 1, req: 1}, {id: 5, x: 6, y: 1, req: 2},
-          {id: 6, x: 0, y: 2, req: 3}, {id: 7, x: 2, y: 2, req: 2}, {id: 8, x: 5, y: 2, req: 3},
-          {id: 9, x: 2, y: 4, req: 4}, {id: 10, x: 4, y: 4, req: 2},
-          {id: 11, x: 5, y: 5, req: 1},
-          {id: 12, x: 0, y: 6, req: 2}, {id: 13, x: 2, y: 6, req: 4}, {id: 14, x: 6, y: 6, req: 4}
-        ]
-      },
-      {
-        id: 6, name: "實戰四", description: "看似分散，但其實只有唯一的連通方式喔！",
-        islands: [
-          {id: 1, x: 0, y: 0, req: 3}, {id: 2, x: 3, y: 0, req: 3}, {id: 3, x: 6, y: 0, req: 3},
-          {id: 4, x: 1, y: 1, req: 2},
-          {id: 5, x: 4, y: 2, req: 3}, {id: 6, x: 6, y: 2, req: 4},
-          {id: 7, x: 0, y: 5, req: 2}, {id: 8, x: 4, y: 5, req: 2},
-          {id: 9, x: 1, y: 6, req: 3}, {id: 10, x: 3, y: 6, req: 4}, {id: 11, x: 6, y: 6, req: 3}
-        ]
-      },
-      {
-        id: 7, name: "實戰五", description: "完美對稱的謎題，保持冷靜一層層解開吧！",
-        islands: [
-          {id: 1, x: 0, y: 0, req: 2}, {id: 2, x: 3, y: 0, req: 4}, {id: 3, x: 6, y: 0, req: 3},
-          {id: 4, x: 1, y: 1, req: 2}, {id: 5, x: 5, y: 1, req: 2},
-          {id: 6, x: 6, y: 2, req: 1},
-          {id: 7, x: 1, y: 3, req: 5}, {id: 8, x: 3, y: 3, req: 4}, {id: 9, x: 5, y: 3, req: 3},
-          {id: 10, x: 0, y: 4, req: 1},
-          {id: 11, x: 3, y: 5, req: 1},
-          {id: 12, x: 1, y: 6, req: 2}, {id: 13, x: 5, y: 6, req: 2}
-        ]
-      },
-      {
-        id: 8, name: "實戰六 (大魔王)", description: "15x15 大型迷宮！請善用「上一步」功能，步步為營。",
-        islands: [
-          {id: 1, x: 2, y: 0, req: 3}, {id: 2, x: 9, y: 0, req: 3}, {id: 3, x: 14, y: 0, req: 3},
-          {id: 4, x: 4, y: 1, req: 4}, {id: 5, x: 6, y: 1, req: 4}, {id: 6, x: 8, y: 1, req: 2}, {id: 7, x: 13, y: 1, req: 4},
-          {id: 8, x: 1, y: 2, req: 1}, {id: 9, x: 5, y: 2, req: 3}, {id: 10, x: 7, y: 2, req: 4}, {id: 11, x: 10, y: 2, req: 2}, {id: 12, x: 12, y: 2, req: 4},
-          {id: 13, x: 2, y: 3, req: 2},
-          {id: 14, x: 1, y: 4, req: 4}, {id: 15, x: 4, y: 4, req: 5}, {id: 16, x: 6, y: 4, req: 5}, {id: 17, x: 8, y: 4, req: 4}, {id: 18, x: 10, y: 4, req: 4}, {id: 19, x: 13, y: 4, req: 4},
-          {id: 20, x: 1, y: 6, req: 4}, {id: 21, x: 4, y: 6, req: 5}, {id: 22, x: 6, y: 6, req: 8}, {id: 23, x: 13, y: 6, req: 5},
-          {id: 24, x: 0, y: 7, req: 2},
-          {id: 25, x: 0, y: 9, req: 4}, {id: 26, x: 8, y: 9, req: 2}, {id: 27, x: 14, y: 9, req: 3},
-          {id: 28, x: 4, y: 10, req: 2},
-          {id: 29, x: 14, y: 11, req: 1},
-          {id: 30, x: 1, y: 13, req: 1}, {id: 31, x: 4, y: 13, req: 2}, {id: 32, x: 6, y: 13, req: 4},
-          {id: 33, x: 0, y: 14, req: 4}, {id: 34, x: 8, y: 14, req: 6}, {id: 35, x: 13, y: 14, req: 4}
-        ]
-      },
-      {
-        id: 9, name: "實戰七 (史詩級)", description: "終極挑戰！這是一張超大型地圖，考驗你的耐心與觀察力！",
-        islands: [
-          {id: 1, x: 0, y: 0, req: 2}, {id: 2, x: 2, y: 0, req: 4}, {id: 3, x: 6, y: 0, req: 2}, {id: 4, x: 9, y: 0, req: 1}, {id: 5, x: 11, y: 0, req: 1}, {id: 6, x: 13, y: 0, req: 5}, {id: 7, x: 16, y: 0, req: 6}, {id: 8, x: 21, y: 0, req: 4}, {id: 9, x: 28, y: 0, req: 2}, {id: 10, x: 30, y: 0, req: 1},
-          {id: 11, x: 1, y: 1, req: 1}, {id: 12, x: 4, y: 1, req: 2}, {id: 13, x: 10, y: 1, req: 2}, {id: 14, x: 12, y: 1, req: 2}, {id: 15, x: 14, y: 1, req: 1},
-          {id: 16, x: 0, y: 2, req: 1}, {id: 17, x: 6, y: 2, req: 5}, {id: 18, x: 13, y: 2, req: 2}, {id: 19, x: 23, y: 2, req: 2}, {id: 20, x: 25, y: 2, req: 3},
-          {id: 21, x: 2, y: 3, req: 4}, {id: 22, x: 8, y: 3, req: 4}, {id: 23, x: 11, y: 3, req: 2}, {id: 24, x: 15, y: 3, req: 7}, {id: 25, x: 21, y: 3, req: 4}, {id: 26, x: 30, y: 3, req: 2},
-          {id: 27, x: 0, y: 4, req: 3}, {id: 28, x: 2, y: 4, req: 3}, {id: 29, x: 12, y: 4, req: 7}, {id: 30, x: 14, y: 4, req: 4}, {id: 31, x: 17, y: 4, req: 1}, {id: 32, x: 20, y: 4, req: 3}, {id: 33, x: 22, y: 4, req: 7}, {id: 34, x: 25, y: 4, req: 2},
-          {id: 35, x: 16, y: 5, req: 2}, {id: 36, x: 18, y: 5, req: 1}, {id: 37, x: 21, y: 5, req: 3}, {id: 38, x: 24, y: 5, req: 2}, {id: 39, x: 27, y: 5, req: 4}, {id: 40, x: 30, y: 5, req: 2},
-          {id: 41, x: 9, y: 6, req: 2}, {id: 42, x: 11, y: 6, req: 3}, {id: 43, x: 15, y: 6, req: 3}, {id: 44, x: 17, y: 6, req: 5}, {id: 45, x: 20, y: 6, req: 5}, {id: 46, x: 26, y: 6, req: 1},
-          {id: 47, x: 11, y: 7, req: 2}, {id: 48, x: 15, y: 7, req: 2}, {id: 49, x: 16, y: 7, req: 2}, {id: 50, x: 19, y: 7, req: 3},
-          {id: 51, x: 3, y: 8, req: 2}, {id: 52, x: 11, y: 8, req: 2}, {id: 53, x: 15, y: 8, req: 2}, {id: 54, x: 17, y: 8, req: 3}, {id: 55, x: 19, y: 8, req: 2}, {id: 56, x: 21, y: 8, req: 3}, {id: 57, x: 30, y: 8, req: 3},
-          {id: 58, x: 2, y: 9, req: 3}, {id: 59, x: 23, y: 9, req: 2}, {id: 60, x: 26, y: 9, req: 4}, {id: 61, x: 29, y: 9, req: 3},
-          {id: 62, x: 12, y: 10, req: 6}, {id: 63, x: 15, y: 10, req: 4}, {id: 64, x: 20, y: 10, req: 2}, {id: 65, x: 22, y: 10, req: 1},
-          {id: 66, x: 0, y: 11, req: 4}, {id: 67, x: 12, y: 11, req: 5}, {id: 68, x: 16, y: 11, req: 3}, {id: 69, x: 21, y: 11, req: 4}, {id: 70, x: 24, y: 11, req: 1}, {id: 71, x: 28, y: 11, req: 2},
-          {id: 72, x: 1, y: 12, req: 1}, {id: 73, x: 3, y: 12, req: 3}, {id: 74, x: 5, y: 12, req: 1}, {id: 75, x: 7, y: 12, req: 4}, {id: 76, x: 10, y: 12, req: 4}, {id: 77, x: 13, y: 12, req: 1}, {id: 78, x: 19, y: 12, req: 2}, {id: 79, x: 22, y: 12, req: 6}, {id: 80, x: 25, y: 12, req: 2}, {id: 81, x: 29, y: 12, req: 1}, {id: 82, x: 30, y: 12, req: 5},
-          {id: 83, x: 5, y: 13, req: 2}, {id: 84, x: 10, y: 13, req: 1}, {id: 85, x: 16, y: 13, req: 3}, {id: 86, x: 20, y: 13, req: 1},
-          {id: 87, x: 7, y: 14, req: 3}, {id: 88, x: 9, y: 14, req: 2}, {id: 89, x: 18, y: 14, req: 1}, {id: 90, x: 22, y: 14, req: 4}, {id: 91, x: 28, y: 14, req: 4},
-          {id: 92, x: 0, y: 15, req: 4}, {id: 93, x: 3, y: 15, req: 7}, {id: 94, x: 5, y: 15, req: 5}, {id: 95, x: 14, y: 15, req: 5}, {id: 96, x: 16, y: 15, req: 8}, {id: 97, x: 28, y: 15, req: 6}, {id: 98, x: 29, y: 15, req: 3},
-          {id: 99, x: 18, y: 16, req: 3}, {id: 100, x: 20, y: 16, req: 1}, {id: 101, x: 30, y: 16, req: 4},
-          {id: 102, x: 10, y: 17, req: 3}, {id: 103, x: 14, y: 17, req: 2}, {id: 104, x: 20, y: 17, req: 3}, {id: 105, x: 26, y: 17, req: 1},
-          {id: 106, x: 10, y: 18, req: 1}, {id: 107, x: 21, y: 18, req: 4}, {id: 108, x: 24, y: 18, req: 3}, {id: 109, x: 27, y: 18, req: 1},
-          {id: 110, x: 0, y: 19, req: 1}, {id: 111, x: 2, y: 19, req: 1}, {id: 112, x: 9, y: 19, req: 2}, {id: 113, x: 12, y: 19, req: 4}, {id: 114, x: 14, y: 19, req: 1}, {id: 115, x: 21, y: 19, req: 1}, {id: 116, x: 26, y: 19, req: 1}, {id: 117, x: 28, y: 19, req: 4},
-          {id: 118, x: 17, y: 20, req: 3}, {id: 119, x: 20, y: 20, req: 3},
-          {id: 120, x: 0, y: 21, req: 1}, {id: 121, x: 2, y: 21, req: 2}, {id: 122, x: 5, y: 21, req: 5}, {id: 123, x: 7, y: 21, req: 2}, {id: 124, x: 9, y: 21, req: 1}, {id: 125, x: 17, y: 21, req: 1}, {id: 126, x: 20, y: 21, req: 2},
-          {id: 127, x: 0, y: 22, req: 3}, {id: 128, x: 5, y: 22, req: 5}, {id: 129, x: 20, y: 22, req: 3}, {id: 130, x: 24, y: 22, req: 3}, {id: 131, x: 27, y: 22, req: 4}, {id: 132, x: 30, y: 22, req: 2}
-        ]
+    for (let i = 0; i < islands.length; i++) {
+      let a = islands[i];
+      let rightNeighbor = null;
+      for (let j = 0; j < islands.length; j++) {
+        let b = islands[j];
+        if (b.y === a.y && b.x > a.x) {
+          if (!rightNeighbor || b.x < rightNeighbor.x) {
+            rightNeighbor = b;
+          }
+        }
       }
-    ];
+      if (rightNeighbor) {
+        pb.push({ id: bridgeId++, from: a.id, to: rightNeighbor.id, type: 'h', count: 0 });
+      }
 
-    function HashiGame() {
-      const [currentLevelId, setCurrentLevelId] = useState(1);
-      const [bridges, setBridges] = useState([]);
-      const [history, setHistory] = useState([]); 
-      const [isWon, setIsWon] = useState(false);
-      const [message, setMessage] = useState("");
+      let bottomNeighbor = null;
+      for (let j = 0; j < islands.length; j++) {
+        let b = islands[j];
+        if (b.x === a.x && b.y > a.y) {
+          if (!bottomNeighbor || b.y < bottomNeighbor.y) {
+            bottomNeighbor = b;
+          }
+        }
+      }
+      if (bottomNeighbor) {
+        pb.push({ id: bridgeId++, from: a.id, to: bottomNeighbor.id, type: 'v', count: 0 });
+      }
+    }
+    return pb;
+  }, [currentLevel]);
 
-      const [isMenuOpen, setIsMenuOpen] = useState(window.innerWidth > 768);
-      const [scale, setScale] = useState(1);
-      const containerRef = useRef(null);
-      const scaleRef = useRef(1);
+  // 切換關卡時，重置所有狀態與視角
+  useEffect(() => {
+    setBridges(potentialBridges.map(b => ({ ...b, count: 0 })));
+    setHistory([]); 
+    setIsWon(false);
+    setHideVictoryModal(false);
+    setMessage("");
+    setZoomLevel(1); // 自動重置縮放比例
+  }, [potentialBridges, currentLevelId]);
 
-      useEffect(() => { scaleRef.current = scale; }, [scale]);
+  const islandCurrentCounts = useMemo(() => {
+    const counts = {};
+    currentLevel.islands.forEach(i => counts[i.id] = 0);
+    bridges.forEach(b => {
+      if (counts[b.from] !== undefined) counts[b.from] += b.count;
+      if (counts[b.to] !== undefined) counts[b.to] += b.count;
+    });
+    return counts;
+  }, [bridges, currentLevel]);
 
-      const currentLevel = useMemo(() => LEVELS.find(l => l.id === currentLevelId), [currentLevelId]);
+  useEffect(() => {
+    let allCountsMatch = true;
+    for (let island of currentLevel.islands) {
+      if (islandCurrentCounts[island.id] !== island.req) {
+        allCountsMatch = false;
+        break;
+      }
+    }
 
-      const potentialBridges = useMemo(() => {
-        let pb = [];
-        let bridgeId = 1;
-        const islands = currentLevel.islands;
+    if (!allCountsMatch) {
+      if (isWon) setIsWon(false);
+      return;
+    }
 
-        for (let i = 0; i < islands.length; i++) {
-          let a = islands[i];
+    const adjList = {};
+    currentLevel.islands.forEach(i => adjList[i.id] = []);
+    bridges.forEach(b => {
+      if (b.count > 0 && adjList[b.from] && adjList[b.to]) {
+        adjList[b.from].push(b.to);
+        adjList[b.to].push(b.from);
+      }
+    });
+
+    const visited = new Set();
+    const queue = [currentLevel.islands[0].id];
+    visited.add(currentLevel.islands[0].id);
+
+    while (queue.length > 0) {
+      const curr = queue.shift();
+      for (let neighbor of adjList[curr]) {
+        if (!visited.has(neighbor)) {
+          visited.add(neighbor);
+          queue.push(neighbor);
+        }
+      }
+    }
+
+    if (visited.size === currentLevel.islands.length) {
+      if (!isWon) {
+        setIsWon(true);
+        setHideVictoryModal(false); 
+      }
+    } else {
+      setIsWon(false);
+    }
+  }, [bridges, currentLevel, islandCurrentCounts, isWon]);
+
+  const showMessage = (msg) => {
+    setMessage(msg);
+    setTimeout(() => setMessage(""), 3000);
+  };
+
+  const isCrossing = (targetBridge, currentBridges) => {
+    const islandsMap = {};
+    currentLevel.islands.forEach(i => islandsMap[i.id] = i);
+
+    const tFrom = islandsMap[targetBridge.from];
+    const tTo = islandsMap[targetBridge.to];
+
+    if (!tFrom || !tTo) return false;
+
+    if (targetBridge.type === 'h') {
+      const y = tFrom.y;
+      const minX = Math.min(tFrom.x, tTo.x);
+      const maxX = Math.max(tFrom.x, tTo.x);
+
+      for (let b of currentBridges) {
+        if (b.count > 0 && b.type === 'v') {
+          const bFrom = islandsMap[b.from];
+          const bTo = islandsMap[b.to];
+          if (!bFrom || !bTo) continue;
           
-          let rightNeighbor = null;
-          for (let j = 0; j < islands.length; j++) {
-            let b = islands[j];
-            if (b.y === a.y && b.x > a.x) {
-              if (!rightNeighbor || b.x < rightNeighbor.x) {
-                rightNeighbor = b;
-              }
-            }
-          }
-          if (rightNeighbor) {
-            pb.push({ id: bridgeId++, from: a.id, to: rightNeighbor.id, type: 'h', count: 0 });
-          }
+          const x = bFrom.x;
+          const minY = Math.min(bFrom.y, bTo.y);
+          const maxY = Math.max(bFrom.y, bTo.y);
 
-          let bottomNeighbor = null;
-          for (let j = 0; j < islands.length; j++) {
-            let b = islands[j];
-            if (b.x === a.x && b.y > a.y) {
-              if (!bottomNeighbor || b.y < bottomNeighbor.y) {
-                bottomNeighbor = b;
-              }
-            }
-          }
-          if (bottomNeighbor) {
-            pb.push({ id: bridgeId++, from: a.id, to: bottomNeighbor.id, type: 'v', count: 0 });
+          if (x > minX && x < maxX && y > minY && y < maxY) {
+            return true;
           }
         }
-        return pb;
-      }, [currentLevel]);
+      }
+    } else {
+      const x = tFrom.x;
+      const minY = Math.min(tFrom.y, tTo.y);
+      const maxY = Math.max(tFrom.y, tTo.y);
 
-      useEffect(() => {
-        setBridges(potentialBridges.map(b => ({ ...b, count: 0 })));
-        setHistory([]); 
-        setIsWon(false);
-        setMessage("");
-        setScale(1); 
-        if (window.innerWidth <= 768) {
-          setIsMenuOpen(false); 
-        }
-      }, [potentialBridges, currentLevelId]);
+      for (let b of currentBridges) {
+        if (b.count > 0 && b.type === 'h') {
+          const bFrom = islandsMap[b.from];
+          const bTo = islandsMap[b.to];
+          if (!bFrom || !bTo) continue;
 
-      useEffect(() => {
-        const container = containerRef.current;
-        if (!container) return;
+          const y = bFrom.y;
+          const minX = Math.min(bFrom.x, bTo.x);
+          const maxX = Math.max(bFrom.x, bTo.x);
 
-        let initialDist = 0;
-        let initialScale = 1;
-
-        const handleTouchStart = (e) => {
-          if (e.touches.length === 2) {
-            const dx = e.touches[0].clientX - e.touches[1].clientX;
-            const dy = e.touches[0].clientY - e.touches[1].clientY;
-            initialDist = Math.hypot(dx, dy);
-            initialScale = scaleRef.current;
-          }
-        };
-
-        const handleTouchMove = (e) => {
-          if (e.touches.length === 2) {
-            e.preventDefault(); 
-            const dx = e.touches[0].clientX - e.touches[1].clientX;
-            const dy = e.touches[0].clientY - e.touches[1].clientY;
-            const dist = Math.hypot(dx, dy);
-            const newScale = Math.min(Math.max(0.3, initialScale * (dist / initialDist)), 3.5); 
-            setScale(newScale);
-          }
-        };
-
-        container.addEventListener('touchstart', handleTouchStart, { passive: false });
-        container.addEventListener('touchmove', handleTouchMove, { passive: false });
-
-        return () => {
-          container.removeEventListener('touchstart', handleTouchStart);
-          container.removeEventListener('touchmove', handleTouchMove);
-        };
-      }, []);
-
-      const islandCurrentCounts = useMemo(() => {
-        const counts = {};
-        currentLevel.islands.forEach(i => counts[i.id] = 0);
-        bridges.forEach(b => {
-          if (counts[b.from] !== undefined) counts[b.from] += b.count;
-          if (counts[b.to] !== undefined) counts[b.to] += b.count;
-        });
-        return counts;
-      }, [bridges, currentLevel]);
-
-      useEffect(() => {
-        let allCountsMatch = true;
-        for (let island of currentLevel.islands) {
-          if (islandCurrentCounts[island.id] !== island.req) {
-            allCountsMatch = false;
-            break;
+          if (y > minY && y < maxY && x > minX && x < maxX) {
+            return true;
           }
         }
+      }
+    }
+    return false;
+  };
 
-        if (!allCountsMatch) {
-          setIsWon(false);
-          return;
+  const handleBridgeClick = (bridgeId) => {
+    if (isWon) return; 
+
+    setBridges(prev => {
+      setHistory(past => [...past, prev]);
+      return prev.map(b => {
+        if (b.id !== bridgeId) return b;
+        if (b.count === 0 && isCrossing(b, prev)) {
+          showMessage("🚫 橋樑不能交叉喔！請先移除阻擋的橋。");
+          setHistory(past => past.slice(0, -1));
+          return b;
         }
+        return { ...b, count: (b.count + 1) % 3 };
+      });
+    });
+  };
 
-        const adjList = {};
-        currentLevel.islands.forEach(i => adjList[i.id] = []);
-        bridges.forEach(b => {
-          if (b.count > 0 && adjList[b.from] && adjList[b.to]) {
-            adjList[b.from].push(b.to);
-            adjList[b.to].push(b.from);
-          }
-        });
+  const handleUndo = () => {
+    if (history.length === 0 || isWon) return;
+    const previousState = history[history.length - 1];
+    setBridges(previousState);
+    setHistory(past => past.slice(0, -1));
+  };
 
-        const visited = new Set();
-        const queue = [currentLevel.islands[0].id];
-        if(queue.length > 0) visited.add(currentLevel.islands[0].id);
+  const handleReset = () => {
+    setBridges(potentialBridges.map(b => ({...b, count: 0})));
+    setHistory([]);
+  };
 
-        while (queue.length > 0) {
-          const curr = queue.shift();
-          for (let neighbor of adjList[curr]) {
-            if (!visited.has(neighbor)) {
-              visited.add(neighbor);
-              queue.push(neighbor);
-            }
-          }
-        }
+  // 電腦版縮放控制功能
+  const handleZoomIn = () => setZoomLevel(prev => Math.min(prev + 0.2, 3));
+  const handleZoomOut = () => setZoomLevel(prev => Math.max(prev - 0.2, 0.4));
+  const handleZoomReset = () => setZoomLevel(1);
 
-        if (visited.size === currentLevel.islands.length) {
-          setIsWon(true);
-        } else {
-          setIsWon(false);
-        }
-      }, [bridges, currentLevel, islandCurrentCounts]);
+  const maxGridX = Math.max(...currentLevel.islands.map(i => i.x), 6); 
+  const maxGridY = Math.max(...currentLevel.islands.map(i => i.y), 6);
+  
+  const SCALE = 65;
+  const PADDING = 85;
+  const ISLAND_RADIUS = 20;
 
-      const showMessage = (msg) => {
-        setMessage(msg);
-        setTimeout(() => setMessage(""), 3000);
-      };
+  const svgWidthBase = maxGridX * SCALE + PADDING * 2;
+  const svgHeightBase = maxGridY * SCALE + PADDING * 2;
 
-      const isCrossing = (targetBridge, currentBridges) => {
-        const islandsMap = {};
-        currentLevel.islands.forEach(i => islandsMap[i.id] = i);
+  const renderBridge = (bridge) => {
+    const islandsMap = {};
+    currentLevel.islands.forEach(i => islandsMap[i.id] = i);
+    const from = islandsMap[bridge.from];
+    const to = islandsMap[bridge.to];
 
-        const tFrom = islandsMap[targetBridge.from];
-        const tTo = islandsMap[targetBridge.to];
+    if (!from || !to) return null;
 
-        if (!tFrom || !tTo) return false;
+    const x1 = from.x * SCALE + PADDING;
+    const y1 = from.y * SCALE + PADDING;
+    const x2 = to.x * SCALE + PADDING;
+    const y2 = to.y * SCALE + PADDING;
 
-        if (targetBridge.type === 'h') {
-          const y = tFrom.y;
-          const minX = Math.min(tFrom.x, tTo.x);
-          const maxX = Math.max(tFrom.x, tTo.x);
+    return (
+      <g key={bridge.id} className="group cursor-pointer" onClick={() => handleBridgeClick(bridge.id)}>
+        {bridge.type === 'h' ? (
+          <rect
+            x={Math.min(x1, x2) + ISLAND_RADIUS}
+            y={y1 - 20}
+            width={Math.abs(x1 - x2) - ISLAND_RADIUS * 2}
+            height={40}
+            className="fill-transparent group-hover:fill-yellow-300/30 transition-colors"
+          />
+        ) : (
+          <rect
+            x={x1 - 20}
+            y={Math.min(y1, y2) + ISLAND_RADIUS}
+            width={40}
+            height={Math.abs(y1 - y2) - ISLAND_RADIUS * 2}
+            className="fill-transparent group-hover:fill-yellow-300/30 transition-colors"
+          />
+        )}
+        {bridge.count === 1 && (
+          <line x1={x1} y1={y1} x2={x2} y2={y2} stroke="#1e293b" strokeWidth="6" strokeLinecap="round" />
+        )}
+        {bridge.count === 2 && bridge.type === 'h' && (
+          <>
+            <line x1={x1} y1={y1 - 5} x2={x2} y2={y2 - 5} stroke="#1e293b" strokeWidth="5" strokeLinecap="round" />
+            <line x1={x1} y1={y1 + 5} x2={x2} y2={y2 + 5} stroke="#1e293b" strokeWidth="5" strokeLinecap="round" />
+          </>
+        )}
+        {bridge.count === 2 && bridge.type === 'v' && (
+          <>
+            <line x1={x1 - 5} y1={y1} x2={x2 - 5} y2={y2} stroke="#1e293b" strokeWidth="5" strokeLinecap="round" />
+            <line x1={x1 + 5} y1={y1} x2={x2 + 5} y2={y2} stroke="#1e293b" strokeWidth="5" strokeLinecap="round" />
+          </>
+        )}
+      </g>
+    );
+  };
 
-          for (let b of currentBridges) {
-            if (b.count > 0 && b.type === 'v') {
-              const bFrom = islandsMap[b.from];
-              const bTo = islandsMap[b.to];
-              if (!bFrom || !bTo) continue;
-              
-              const x = bFrom.x;
-              const minY = Math.min(bFrom.y, bTo.y);
-              const maxY = Math.max(bFrom.y, bTo.y);
+  const renderIsland = (island) => {
+    const cx = island.x * SCALE + PADDING;
+    const cy = island.y * SCALE + PADDING;
+    const current = islandCurrentCounts[island.id];
+    
+    let strokeColor = "#1e293b"; // 美式漫畫粗黑線
+    let bgColor = "#ffffff";
+    let textColor = "#1e293b";
 
-              if (x > minX && x < maxX && y > minY && y < maxY) {
-                return true;
-              }
-            }
-          }
-        } else {
-          const x = tFrom.x;
-          const minY = Math.min(tFrom.y, tTo.y);
-          const maxY = Math.max(tFrom.y, tTo.y);
+    if (current === island.req) {
+      strokeColor = "#059669"; // Comic Green
+      bgColor = "#d1fae5";
+      textColor = "#065f46";
+    } else if (current > island.req) {
+      strokeColor = "#dc2626"; // Comic Red
+      bgColor = "#fee2e2";
+      textColor = "#991b1b";
+    }
 
-          for (let b of currentBridges) {
-            if (b.count > 0 && b.type === 'h') {
-              const bFrom = islandsMap[b.from];
-              const bTo = islandsMap[b.to];
-              if (!bFrom || !bTo) continue;
+    return (
+      <g key={`island-${island.id}`}>
+        {/* 美式漫畫風的偏移陰影 */}
+        <circle cx={cx + 3} cy={cy + 3} r={ISLAND_RADIUS} fill="rgba(30,41,59,0.2)" />
+        <circle
+          cx={cx}
+          cy={cy}
+          r={ISLAND_RADIUS}
+          fill={bgColor}
+          stroke={strokeColor}
+          strokeWidth="4"
+          className="transition-colors duration-300"
+        />
+        <text
+          x={cx}
+          y={cy + 2} // 微調字體垂直置中
+          textAnchor="middle"
+          dominantBaseline="central"
+          className="text-xl font-black font-sans pointer-events-none transition-colors duration-300"
+          fill={textColor}
+        >
+          {island.req}
+        </text>
+      </g>
+    );
+  };
 
-              const y = bFrom.y;
-              const minX = Math.min(bFrom.x, bTo.x);
-              const maxX = Math.max(bFrom.x, bTo.x);
-
-              if (y > minY && y < maxY && x > minX && x < maxX) {
-                return true;
-              }
-            }
-          }
-        }
-        return false;
-      };
-
-      const handleBridgeClick = (bridgeId) => {
-        if (isWon) return; 
-
-        setBridges(prev => {
-          setHistory(past => [...past, prev]);
-
-          return prev.map(b => {
-            if (b.id !== bridgeId) return b;
-            
-            if (b.count === 0 && isCrossing(b, prev)) {
-              showMessage("🚫 橋樑不能交叉喔！請先移除阻擋的橋。");
-              setHistory(past => past.slice(0, -1));
-              return b;
-            }
-            
-            return { ...b, count: (b.count + 1) % 3 };
-          });
-        });
-      };
-
-      const handleUndo = () => {
-        if (history.length === 0 || isWon) return;
-        const previousState = history[history.length - 1];
-        setBridges(previousState);
-        setHistory(past => past.slice(0, -1));
-      };
-
-      const handleReset = () => {
-        setBridges(potentialBridges.map(b => ({...b, count: 0})));
-        setHistory([]);
-      };
-
-      const maxGridX = Math.max(...currentLevel.islands.map(i => i.x), 6); 
-      const maxGridY = Math.max(...currentLevel.islands.map(i => i.y), 6);
+  return (
+    // 美式漫畫 Halftone Dot Pattern 背景 + 手繪米黃色
+    <div className="min-h-screen p-2 md:p-4 flex flex-col items-center font-sans relative"
+         style={{
+           backgroundColor: '#fdf5e6', // 復古米黃紙張底色
+           backgroundImage: 'radial-gradient(#d3c5ab 2px, transparent 2px)', // Comic Dot 網點
+           backgroundSize: '12px 12px'
+         }}>
       
-      const SCALE = 65;
-      const PADDING = 85;
-      const ISLAND_RADIUS = 20;
-
-      const baseSvgWidth = maxGridX * SCALE + PADDING * 2;
-      const baseSvgHeight = maxGridY * SCALE + PADDING * 2;
-
-      const renderBridge = (bridge) => {
-        const islandsMap = {};
-        currentLevel.islands.forEach(i => islandsMap[i.id] = i);
-        const from = islandsMap[bridge.from];
-        const to = islandsMap[bridge.to];
-
-        if (!from || !to) return null;
-
-        const x1 = from.x * SCALE + PADDING;
-        const y1 = from.y * SCALE + PADDING;
-        const x2 = to.x * SCALE + PADDING;
-        const y2 = to.y * SCALE + PADDING;
-
-        return (
-          <g key={bridge.id} className="group cursor-pointer" onClick={() => handleBridgeClick(bridge.id)}>
-            {bridge.type === 'h' ? (
-              <rect
-                x={Math.min(x1, x2) + ISLAND_RADIUS}
-                y={y1 - 20}
-                width={Math.abs(x1 - x2) - ISLAND_RADIUS * 2}
-                height={40}
-                className="fill-transparent group-hover:fill-blue-100/50 transition-colors"
-              />
-            ) : (
-              <rect
-                x={x1 - 20}
-                y={Math.min(y1, y2) + ISLAND_RADIUS}
-                width={40}
-                height={Math.abs(y1 - y2) - ISLAND_RADIUS * 2}
-                className="fill-transparent group-hover:fill-blue-100/50 transition-colors"
-              />
-            )}
-
-            {bridge.count === 1 && (
-              <line x1={x1} y1={y1} x2={x2} y2={y2} stroke="#374151" strokeWidth="6" />
-            )}
-            {bridge.count === 2 && bridge.type === 'h' && (
-              <React.Fragment>
-                <line x1={x1} y1={y1 - 5} x2={x2} y2={y2 - 5} stroke="#374151" strokeWidth="5" />
-                <line x1={x1} y1={y1 + 5} x2={x2} y2={y2 + 5} stroke="#374151" strokeWidth="5" />
-              </React.Fragment>
-            )}
-            {bridge.count === 2 && bridge.type === 'v' && (
-              <React.Fragment>
-                <line x1={x1 - 5} y1={y1} x2={x2 - 5} y2={y2} stroke="#374151" strokeWidth="5" />
-                <line x1={x1 + 5} y1={y1} x2={x2 + 5} y2={y2} stroke="#374151" strokeWidth="5" />
-              </React.Fragment>
-            )}
-          </g>
-        );
-      };
-
-      const renderIsland = (island) => {
-        const cx = island.x * SCALE + PADDING;
-        const cy = island.y * SCALE + PADDING;
-        const current = islandCurrentCounts[island.id];
+      {/* 遊戲主容器框 (加入粗邊框與硬陰影，提升美式手繪感) */}
+      <div className="w-full max-w-[1200px] bg-[#fffaf0] rounded-xl border-4 border-slate-800 shadow-[8px_8px_0px_rgba(30,41,59,1)] overflow-hidden flex flex-col h-[95vh] relative">
         
-        let strokeColor = "#1f2937";
-        let bgColor = "#ffffff";
-        let textColor = "#1f2937";
+        {/* 標頭與控制區 (美式漫畫標題框風格) */}
+        <div className={`bg-[#ffcc00] border-b-4 border-slate-800 text-slate-900 shrink-0 z-20 transition-all duration-300 ease-in-out ${isHeaderCollapsed ? 'p-2 flex flex-wrap gap-2 items-center justify-between' : 'p-3 md:p-5 flex flex-col gap-3'}`}>
+          
+          {/* 上半部：標題與收合按鈕 */}
+          <div className="flex justify-between items-center w-full">
+            {!isHeaderCollapsed ? (
+              <h1 className="text-2xl md:text-3xl font-black tracking-tight uppercase">🌉 Hashi 數橋挑戰</h1>
+            ) : (
+              <h1 className="text-lg font-black tracking-tight uppercase px-2">🌉 數橋</h1>
+            )}
 
-        if (current === island.req) {
-          strokeColor = "#10b981"; // 綠色
-          bgColor = "#ecfdf5";
-          textColor = "#047857";
-        } else if (current > island.req) {
-          strokeColor = "#ef4444"; // 紅色
-          bgColor = "#fef2f2";
-          textColor = "#b91c1c";
-        }
-
-        return (
-          <g key={`island-${island.id}`}>
-            <circle
-              cx={cx}
-              cy={cy}
-              r={ISLAND_RADIUS}
-              fill={bgColor}
-              stroke={strokeColor}
-              strokeWidth="4"
-              className="transition-colors duration-300"
-            />
-            <text
-              x={cx}
-              y={cy}
-              textAnchor="middle"
-              dominantBaseline="central"
-              className="text-xl font-bold font-sans pointer-events-none transition-colors duration-300"
-              fill={textColor}
-            >
-              {island.req}
-            </text>
-          </g>
-        );
-      };
-
-      return (
-        <div className="min-h-screen p-2 md:p-4 flex flex-col items-center font-sans">
-          <div className="w-full max-w-5xl bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col h-[95vh] md:max-h-[90vh] border border-slate-200">
+            {/* 若展開狀態，控制列放下面；若縮小狀態，控制列直接擠在同一行 */}
+            {isHeaderCollapsed && (
+              <div className="flex items-center gap-2 flex-wrap">
+                <select
+                  value={currentLevelId}
+                  onChange={(e) => setCurrentLevelId(Number(e.target.value))}
+                  className="px-2 py-1 rounded-md border-2 border-slate-800 font-bold bg-white text-slate-800 text-sm outline-none cursor-pointer shadow-[2px_2px_0px_rgba(30,41,59,1)]"
+                >
+                  {LEVELS.map(level => (
+                    <option key={level.id} value={level.id}>{level.name}</option>
+                  ))}
+                </select>
+                <button onClick={handleUndo} disabled={history.length === 0 || isWon} className="px-2 py-1 bg-white border-2 border-slate-800 rounded-md font-bold text-sm shadow-[2px_2px_0px_rgba(30,41,59,1)] hover:bg-slate-100 disabled:opacity-50">↩️</button>
+                <button onClick={handleReset} className="px-2 py-1 bg-red-500 text-white border-2 border-slate-800 rounded-md font-bold text-sm shadow-[2px_2px_0px_rgba(30,41,59,1)] hover:bg-red-600">🔄</button>
+                <button onClick={() => setIsHeaderCollapsed(false)} className="ml-1 bg-slate-800 text-white px-2 py-1 rounded-md font-bold text-sm shadow-[2px_2px_0px_rgba(0,0,0,0.3)] hover:bg-slate-700">🔽 展開</button>
+              </div>
+            )}
             
-            <div className="bg-blue-600 text-white shrink-0 z-20 shadow-md">
-              <div className="p-3 md:p-4 flex flex-wrap justify-between items-center gap-2">
-                <div className="flex items-center gap-3">
-                  <h1 className="text-xl md:text-2xl font-bold">🌉 數橋</h1>
-                  <span className="bg-blue-800/50 px-2 py-1 rounded text-xs md:text-sm truncate max-w-[120px] md:max-w-none">{currentLevel.name}</span>
+            {/* 展開狀態時的縮小按鈕 */}
+            {!isHeaderCollapsed && (
+              <button 
+                onClick={() => setIsHeaderCollapsed(true)}
+                className="bg-slate-800 hover:bg-slate-700 text-white px-3 py-1.5 rounded-md font-bold text-sm shadow-[3px_3px_0px_rgba(0,0,0,0.3)] transition-transform active:translate-y-1 active:shadow-none flex items-center gap-1"
+              >
+                🔼 縮小面板
+              </button>
+            )}
+          </div>
+          
+          {/* 下半部：完整的遊戲規則與展開狀態的控制列 */}
+          {!isHeaderCollapsed && (
+            <>
+              {/* 完整規則與提示面板 */}
+              <div className="bg-white border-2 border-slate-800 rounded-lg p-3 md:p-4 text-slate-800 shadow-[4px_4px_0px_rgba(30,41,59,1)] animate-[fadeIn_0.3s_ease-in] flex flex-col md:flex-row gap-4">
+                <div className="flex-1">
+                  <h3 className="text-base md:text-lg font-black mb-1 md:mb-2 border-b-4 border-[#ffcc00] inline-block pb-1">📜 遊戲四大規則</h3>
+                  <ol className="list-decimal list-outside ml-5 space-y-1 md:space-y-1.5 text-xs md:text-sm leading-relaxed font-bold">
+                    <li>每個圓圈是一座「島」，數字代表該島需要的<span className="text-blue-600 font-black">對外橋樑總數</span>。</li>
+                    <li>橋樑必須是<span className="text-blue-600 font-black">垂直或水平</span>方向（不可以搭斜對角或波浪狀）。</li>
+                    <li>橋樑之間<span className="text-red-500 font-black">絕對不能交叉或重疊</span>。</li>
+                    <li>兩座島之間<span className="text-blue-600 font-black">最多只能架設 2 座橋</span>。</li>
+                    <li>完成時，每個島都有辦法<span className="text-emerald-600 font-black">通往其他任何一個島</span>（全部連通）。</li>
+                  </ol>
                 </div>
+                <div className="md:w-1/3 bg-[#ffcc00]/20 p-3 rounded-lg border-2 border-slate-800 flex flex-col justify-center">
+                  <p className="text-slate-800 font-black text-sm md:text-base mb-1 flex items-center gap-1"><span>💡</span> 本關提示：</p>
+                  <p className="text-slate-700 text-xs md:text-sm font-bold leading-relaxed">{currentLevel.description}</p>
+                </div>
+              </div>
+
+              {/* 選單與操作列 */}
+              <div className="flex flex-wrap gap-2 items-center mt-1">
+                <span className="font-bold text-slate-800 mr-1 text-sm md:text-base">關卡選擇：</span>
+                <select
+                  value={currentLevelId}
+                  onChange={(e) => setCurrentLevelId(Number(e.target.value))}
+                  className="px-3 py-1.5 rounded-md border-2 border-slate-800 font-bold bg-white text-slate-800 text-sm md:text-base outline-none cursor-pointer shadow-[3px_3px_0px_rgba(30,41,59,1)]"
+                >
+                  {LEVELS.map(level => (
+                    <option key={level.id} value={level.id}>{level.name}</option>
+                  ))}
+                </select>
                 
-                <div className="flex items-center gap-1 md:gap-2 ml-auto">
+                <div className="ml-auto flex gap-2">
                   <button 
                     onClick={handleUndo}
                     disabled={history.length === 0 || isWon}
-                    className={`px-3 py-1.5 text-sm rounded-lg font-medium transition-colors flex items-center gap-1
-                      ${history.length === 0 || isWon 
-                        ? "bg-blue-800/40 text-blue-300 cursor-not-allowed" 
-                        : "bg-amber-500 hover:bg-amber-600 text-white shadow-sm"}`}
+                    className="px-3 md:px-4 py-1.5 bg-white border-2 border-slate-800 rounded-md font-bold text-sm md:text-base shadow-[3px_3px_0px_rgba(30,41,59,1)] hover:bg-slate-100 disabled:opacity-50 disabled:shadow-none active:translate-y-1 active:shadow-none transition-all flex items-center gap-1"
                   >
-                    ↩️ <span className="hidden md:inline">上一步</span>
+                    ↩️ 復原
                   </button>
                   <button 
                     onClick={handleReset}
-                    className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white text-sm rounded-lg font-medium transition-colors shadow-sm"
+                    className="px-3 md:px-4 py-1.5 bg-red-500 text-white border-2 border-slate-800 rounded-md font-bold text-sm md:text-base shadow-[3px_3px_0px_rgba(30,41,59,1)] hover:bg-red-600 active:translate-y-1 active:shadow-none transition-all"
                   >
-                    🔄 <span className="hidden md:inline">重置</span>
-                  </button>
-                  <button 
-                    onClick={() => setIsMenuOpen(!isMenuOpen)}
-                    className="px-3 py-1.5 bg-blue-700 hover:bg-blue-800 text-white text-sm rounded-lg font-medium transition-colors shadow-sm flex items-center gap-1"
-                  >
-                    {isMenuOpen ? '▲ 收起' : '▼ 選單'}
+                    🔄 重置
                   </button>
                 </div>
               </div>
-
-              {isMenuOpen && (
-                <div className="p-3 md:p-4 pt-0 border-t border-blue-500/50 bg-blue-600">
-                  <p className="text-blue-100 opacity-90 mb-3 text-sm">{currentLevel.description}</p>
-                  <div className="flex flex-wrap gap-2 items-center">
-                    {LEVELS.map(level => (
-                      <button
-                        key={level.id}
-                        onClick={() => setCurrentLevelId(level.id)}
-                        className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                          currentLevelId === level.id 
-                            ? "bg-white text-blue-600 shadow-sm" 
-                            : "bg-blue-700/50 hover:bg-blue-700 text-white"
-                        }`}
-                      >
-                        {level.name}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="h-8 md:h-10 shrink-0 flex items-center justify-center bg-slate-100 border-b border-slate-200 z-10 shadow-sm">
-              {message && <span className="text-red-600 font-semibold animate-pulse text-sm">{message}</span>}
-              {!message && !isWon && <span className="text-slate-500 text-xs md:text-sm">操作提示：兩指捏放可縮放，點空白處切換橋樑。</span>}
-              {isWon && <span className="text-emerald-600 font-bold text-sm md:text-lg animate-bounce">🎉 恭喜！完美過關！ 🎉</span>}
-            </div>
-
-            <div 
-              ref={containerRef}
-              className="p-4 bg-slate-200/50 flex-1 overflow-auto relative custom-scrollbar touch-pan-x touch-pan-y"
-              style={{ overscrollBehavior: 'none' }}
-            >
-              <div className="flex justify-center items-center min-w-max min-h-max">
-                <svg 
-                  viewBox={`0 0 ${baseSvgWidth} ${baseSvgHeight}`} 
-                  className="bg-white rounded-xl shadow-inner transition-all duration-75 origin-center"
-                  style={{ 
-                    width: `${baseSvgWidth * scale}px`,
-                    height: `${baseSvgHeight * scale}px`,
-                    backgroundImage: 'radial-gradient(#e2e8f0 2px, transparent 2px)',
-                    backgroundSize: '40px 40px' 
-                  }}
-                >
-                  {bridges.map(renderBridge)}
-                  {currentLevel.islands.map(renderIsland)}
-                </svg>
-              </div>
-
-              <div className="fixed md:absolute bottom-6 right-6 flex flex-col gap-2 z-20">
-                <button onClick={() => setScale(s => Math.min(s + 0.3, 3.5))} className="w-10 h-10 bg-white/90 backdrop-blur rounded-full shadow-lg flex items-center justify-center text-2xl font-bold text-slate-700 border border-slate-200 hover:bg-slate-50 active:scale-95 transition-transform">＋</button>
-                <button onClick={() => setScale(s => Math.max(s - 0.3, 0.3))} className="w-10 h-10 bg-white/90 backdrop-blur rounded-full shadow-lg flex items-center justify-center text-2xl font-bold text-slate-700 border border-slate-200 hover:bg-slate-50 active:scale-95 transition-transform">－</button>
-              </div>
-
-              {isWon && (
-                <div className="absolute inset-0 bg-white/60 backdrop-blur-sm flex items-center justify-center z-10">
-                  <div className="bg-white p-8 rounded-2xl shadow-2xl text-center transform hover:scale-105 transition-transform border-2 border-emerald-400">
-                    <div className="text-6xl mb-4">🏆</div>
-                    <h2 className="text-3xl font-bold text-slate-800 mb-2">大師級工程師！</h2>
-                    <p className="text-slate-600 mb-6">你成功連通了所有的島嶼。</p>
-                    {currentLevelId < LEVELS.length ? (
-                      <button 
-                        onClick={() => setCurrentLevelId(currentLevelId + 1)}
-                        className="px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-white text-lg font-bold rounded-xl shadow-lg hover:shadow-xl transition-all"
-                      >
-                        挑戰下一關 ➔
-                      </button>
-                    ) : (
-                      <button 
-                        onClick={handleReset}
-                        className="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white text-lg font-bold rounded-xl shadow-lg hover:shadow-xl transition-all"
-                      >
-                        再玩一次
-                      </button>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-
-          </div>
+            </>
+          )}
         </div>
-      );
-    }
 
-    // 將 React 元件渲染到畫面上
-    const root = ReactDOM.createRoot(document.getElementById('root'));
-    root.render(<HashiGame />);
-  </script>
-</body>
-</html>
+        {/* 提示訊息區 */}
+        {!isHeaderCollapsed && (
+          <div className="h-8 shrink-0 flex items-center justify-center bg-slate-800 text-white border-b-4 border-slate-800 z-10 font-bold tracking-wide">
+            {message && <span className="text-yellow-300 animate-pulse">{message}</span>}
+            {!message && !isWon && <span className="text-xs md:text-sm hidden md:inline">支援滑鼠拖曳、滾輪縮放；右下角有縮放按鈕可供使用。</span>}
+            {!message && !isWon && <span className="text-xs md:text-sm md:hidden">點擊島嶼間空白處架橋。支援雙指縮放與平移。</span>}
+          </div>
+        )}
+
+        {/* 主畫布區的包裹層 (用來放絕對定位的懸浮按鈕) */}
+        <div className="relative flex-1 flex flex-col min-h-0 bg-[#fffaf0]">
+          
+          {/* 電腦版實體縮放按鈕 (常駐於畫面右下角) */}
+          <div className="absolute bottom-4 right-4 md:bottom-6 md:right-6 flex flex-col gap-2 md:gap-3 z-20 pointer-events-auto">
+            <button onClick={handleZoomIn} title="放大" className="w-10 h-10 md:w-12 md:h-12 bg-white border-2 border-slate-800 rounded-full font-black text-xl md:text-2xl shadow-[3px_3px_0px_rgba(30,41,59,1)] hover:bg-slate-100 active:translate-y-1 active:shadow-none transition-all flex items-center justify-center text-slate-800">
+              ＋
+            </button>
+            <button onClick={handleZoomOut} title="縮小" className="w-10 h-10 md:w-12 md:h-12 bg-white border-2 border-slate-800 rounded-full font-black text-2xl md:text-3xl shadow-[3px_3px_0px_rgba(30,41,59,1)] hover:bg-slate-100 active:translate-y-1 active:shadow-none transition-all flex items-center justify-center text-slate-800">
+              －
+            </button>
+            <button onClick={handleZoomReset} title="重置比例" className="w-10 h-10 md:w-12 md:h-12 bg-slate-800 border-2 border-slate-800 rounded-full font-black text-xs md:text-sm shadow-[3px_3px_0px_rgba(0,0,0,0.3)] hover:bg-slate-700 active:translate-y-1 active:shadow-none transition-all flex items-center justify-center text-white">
+              1x
+            </button>
+          </div>
+
+          {/* 遊戲畫布區 (可捲動區塊，允許原生兩指縮放) */}
+          <div className="p-2 md:p-6 flex-1 overflow-auto custom-scrollbar">
+            <div className="flex justify-center items-center min-w-max min-h-max m-auto pb-24 pr-20">
+              <svg 
+                viewBox={`0 0 ${svgWidthBase} ${svgHeightBase}`} 
+                className="bg-transparent transition-all duration-300 ease-out"
+                style={{ 
+                  width: `${svgWidthBase * zoomLevel}px`,
+                  height: `${svgHeightBase * zoomLevel}px`,
+                  touchAction: 'manipulation' // 確保支援原生的拖移與雙指縮放
+                }}
+              >
+                {/* 加入非常淡的底線網格幫助對齊 (手繪風) */}
+                <defs>
+                  <pattern id="grid" width={SCALE} height={SCALE} patternUnits="userSpaceOnUse">
+                    <path d={`M ${SCALE} 0 L 0 0 0 ${SCALE}`} fill="none" stroke="#e2e8f0" strokeWidth="1"/>
+                  </pattern>
+                </defs>
+                <rect width="100%" height="100%" fill="url(#grid)" transform={`translate(${PADDING}, ${PADDING})`} className="opacity-50 pointer-events-none" />
+                
+                {bridges.map(renderBridge)}
+                {currentLevel.islands.map(renderIsland)}
+              </svg>
+            </div>
+          </div>
+
+        </div>
+
+        {/* 過關選單：置底漫畫風對話框 */}
+        {isWon && !hideVictoryModal && (
+          <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 bg-white rounded-2xl p-5 md:p-6 border-4 border-slate-800 shadow-[8px_8px_0px_rgba(30,41,59,1)] z-30 text-center min-w-[280px] md:min-w-[320px] animate-[bounce_1s_ease-in-out_1]">
+            <button 
+              onClick={() => setHideVictoryModal(true)} 
+              className="absolute top-2 right-3 text-slate-400 hover:text-slate-800 text-2xl font-black"
+              title="隱藏面板以檢視完整地圖"
+            >
+              ✕
+            </button>
+            <div className="text-4xl md:text-5xl mb-2">💥🏆</div>
+            <h2 className="text-xl md:text-2xl font-black text-slate-800 mb-2 uppercase tracking-wide">PERFECT!</h2>
+            <p className="text-slate-600 mb-5 text-sm md:text-base font-bold border-b-2 border-dashed border-slate-300 pb-4">所有的島嶼都成功連結了！</p>
+            <div className="flex justify-center gap-3">
+              {currentLevelId < LEVELS.length ? (
+                <button 
+                  onClick={() => setCurrentLevelId(currentLevelId + 1)}
+                  className="px-4 md:px-5 py-2 bg-[#ffcc00] hover:bg-[#e6b800] text-slate-900 border-2 border-slate-800 font-black rounded-xl shadow-[4px_4px_0px_rgba(30,41,59,1)] active:translate-y-1 active:shadow-none transition-all text-sm md:text-base"
+                >
+                  NEXT LEVEL ➔
+                </button>
+              ) : (
+                <button 
+                  onClick={handleReset}
+                  className="px-4 md:px-5 py-2 bg-blue-500 hover:bg-blue-600 text-white border-2 border-slate-800 font-black rounded-xl shadow-[4px_4px_0px_rgba(30,41,59,1)] active:translate-y-1 active:shadow-none transition-all text-sm md:text-base"
+                >
+                  PLAY AGAIN
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* 隱藏過關選單後的復原按鈕 (Comic Action Button) */}
+        {isWon && hideVictoryModal && (
+          <button
+            onClick={() => setHideVictoryModal(false)}
+            className="absolute bottom-6 left-1/2 transform -translate-x-1/2 bg-[#ffcc00] text-slate-900 border-4 border-slate-800 px-5 py-2 rounded-full shadow-[6px_6px_0px_rgba(30,41,59,1)] z-30 hover:bg-[#e6b800] active:translate-y-1 active:shadow-none transition-all font-black flex items-center gap-2 tracking-wide"
+          >
+            🏆 SHOW VICTORY
+          </button>
+        )}
+
+      </div>
+      
+      {/* 動畫與自訂捲軸的 CSS */}
+      <style dangerouslySetInnerHTML={{__html: `
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(-5px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 12px;
+          height: 12px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: #f1f5f9;
+          border-left: 2px solid #1e293b;
+          border-top: 2px solid #1e293b;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: #cbd5e1;
+          border: 2px solid #1e293b;
+          border-radius: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: #94a3b8;
+        }
+      `}} />
+    </div>
+  );
+}
+
+
